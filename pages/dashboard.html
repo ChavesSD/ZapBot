@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAP Bot - Dashboard</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Menu Lateral -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <img src="../assets/ZAP Bot.png" alt="ZAP Bot Logo" class="sidebar-logo">
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active" data-page="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li data-page="connect">
+                    <i class="fas fa-link"></i>
+                    <span>Conectar</span>
+                </li>
+                <li data-page="flows">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Fluxos</span>
+                </li>
+                <li data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Configurações</span>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <button id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Sair</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="userEmail">adm@zapbot.com</span>
+                </div>
+            </header>
+
+            <!-- Área de Conteúdo -->
+            <div class="content-area">
+                <!-- Páginas do SPA -->
+                <div id="dashboard" class="page active">
+                    <h2>Dashboard</h2>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <i class="fas fa-comments"></i>
+                            <h3>Mensagens</h3>
+                            <p>0</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-users"></i>
+                            <h3>Contatos</h3>
+                            <p>0</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-robot"></i>
+                            <h3>Fluxos Ativos</h3>
+                            <p>0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="connect" class="page">
+                    <h2>Conectar ZAP Bot</h2>
+                    <div class="connect-container">
+                        <div class="qr-code-container">
+                            <div class="qr-code">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                            <p>Escaneie o QR Code com seu WhatsApp</p>
+                        </div>
+                        <button class="connect-btn">
+                            <i class="fas fa-sync"></i>
+                            Gerar Novo QR Code
+                        </button>
+                    </div>
+                </div>
+
+                <div id="flows" class="page">
+                    <h2>Fluxos de Conversação</h2>
+                    <div class="flows-container">
+                        <button class="new-flow-btn">
+                            <i class="fas fa-plus"></i>
+                            Novo Fluxo
+                        </button>
+                        <div class="test-message-form">
+                            <h3>Enviar Mensagem de Teste</h3>
+                            <div class="form-group">
+                                <label for="test-number">Número do WhatsApp:</label>
+                                <input type="text" id="test-number" placeholder="Ex: 5511999999999" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="test-message">Mensagem:</label>
+                                <textarea id="test-message" placeholder="Digite sua mensagem..." required></textarea>
+                            </div>
+                            <button id="send-test-message" class="send-btn">
+                                <i class="fas fa-paper-plane"></i>
+                                Enviar Mensagem
+                            </button>
+                            <p id="message-status" class="message-status"></p>
+                        </div>
+                        <div class="flows-list">
+                            <p class="empty-state">Nenhum fluxo criado ainda</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="settings" class="page">
+                    <h2>Configurações</h2>
+                    <div class="settings-container">
+                        <div class="settings-section">
+                            <h3>Configurações Gerais</h3>
+                            <div class="setting-item">
+                                <label>Nome do Bot</label>
+                                <input type="text" value="ZAP Bot">
+                            </div>
+                            <div class="setting-item">
+                                <label>Mensagem de Boas-vindas</label>
+                                <textarea>Olá! Sou o ZAP Bot. Como posso ajudar?</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="../js/dashboard.js"></script>
+
+    <!-- Modal Novo Fluxo -->
+    <div id="modalNovoFluxo" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closeModalNovoFluxo">&times;</span>
+            <h2>Novo Fluxo de Perguntas e Respostas</h2>
+            <form id="formNovoFluxo">
+                <div class="form-group">
+                    <label for="nomeFluxo">Nome do Fluxo:</label>
+                    <input type="text" id="nomeFluxo" name="nomeFluxo" required>
+                </div>
+                <div id="perguntasRespostasContainer">
+                    <div class="pergunta-resposta">
+                        <input type="text" class="pergunta" placeholder="Pergunta" required>
+                        <input type="text" class="resposta" placeholder="Resposta" required>
+                    </div>
+                </div>
+                <button type="button" id="addPerguntaResposta">Adicionar Pergunta/Resposta</button>
+                <div class="modal-actions">
+                    <button type="submit" class="save">Salvar Fluxo</button>
+                    <button type="button" class="cancel" id="cancelNovoFluxo">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html> 

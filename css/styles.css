@@ -1,0 +1,123 @@
+/* Definindo as variáveis de cores para corresponder à logo */
+:root {
+    --primary-color: #006241; /* Verde escuro da logo */
+    --primary-hover: #004d33; /* Verde mais escuro para hover */
+    --text-on-primary: #ffffff; /* Texto branco */
+    --secondary-color: #e6f5f0; /* Verde claro para fundos secundários */
+    --accent-color: #ffffff; /* Cor de destaque */
+    --border-color: rgba(255, 255, 255, 0.2);
+    --error-color: #e74c3c;
+    --success-color: #4CAF50;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: var(--secondary-color);
+    position: relative;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    padding: 0 20px;
+}
+
+.login-box {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.login-box h2 {
+    margin-bottom: 20px;
+    color: var(--primary-color);
+}
+
+.login-logo {
+    max-width: 180px;
+    height: auto;
+    margin: 0 auto 25px;
+    display: block;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input:focus {
+    outline: none;
+    border-color: #25D366;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.remember-me input[type="checkbox"] {
+    width: auto;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.remember-me label {
+    color: #666;
+    cursor: pointer;
+}
+
+button[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary-color);
+    color: var(--text-on-primary);
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button[type="submit"]:hover {
+    background-color: var(--primary-hover);
+}
+
+.error-message {
+    color: var(--error-color);
+    margin-top: 15px;
+    display: none;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px 0;
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 14px;
+} 
