@@ -298,117 +298,24 @@ function handleApiError(error, defaultMessage = 'Ocorreu um erro na operação.'
     showNotification('error', 'Erro', message);
 }
 
-// Mover a função displayQRCode para o escopo global
-// Função para exibir o QR Code
-function displayQRCode(qrcode) {
-    if (!updateStatusUIFunction) {
-        console.error('updateStatusUIFunction não está definida');
-        return;
-    }
-    
-    const qrContainer = document.querySelector('.qr-code');
-    if (!qrContainer) {
-        console.error('Elemento QR code não encontrado');
-        return;
-    }
-    
-    // Limpar conteúdo atual
-    qrContainer.innerHTML = '';
-    
-    // Criar imagem do QR Code
-    const img = document.createElement('img');
-    
+// Função para buscar QR Code
+async function fetchQRCode() {
     try {
-        // Verificar se o QR code já é uma URL de imagem
-        if (typeof qrcode === 'string') {
-            if (qrcode.startsWith('data:image/')) {
-                img.src = qrcode;
-            } else if (qrcode.startsWith('http')) {
-                img.src = qrcode;
-            } else {
-                // Se for uma string base64 sem o prefixo de data URL
-                img.src = 'data:image/png;base64,' + qrcode;
-            }
-        } else if (qrcode && qrcode.base64Qr) {
-            // Se for um objeto com propriedade base64Qr
-            img.src = 'data:image/png;base64,' + qrcode.base64Qr;
-        } else if (qrcode && qrcode.qrcode) {
-            // Se for um objeto com propriedade qrcode (outro formato comum)
-            if (typeof qrcode.qrcode === 'string') {
-                if (qrcode.qrcode.startsWith('data:image/')) {
-                    img.src = qrcode.qrcode;
-                } else if (qrcode.qrcode.startsWith('http')) {
-                    img.src = qrcode.qrcode;
-                } else {
-                    img.src = 'data:image/png;base64,' + qrcode.qrcode;
-                }
-            } else {
-                console.error('Formato de QR code não reconhecido');
-                qrContainer.innerHTML = '<div class="qr-error"><i class="fas fa-exclamation-triangle"></i><p>Formato de QR Code não reconhecido</p></div>';
-                return;
-            }
-        } else {
-            console.error('Formato de QR code não reconhecido');
-            console.log('Conteúdo recebido:', qrcode);
-            qrContainer.innerHTML = '<div class="qr-error"><i class="fas fa-exclamation-triangle"></i><p>Formato de QR Code não reconhecido</p></div>';
+        const qrContainer = document.getElementById('qrcode');
+        if (!qrContainer) {
+            console.error('Elemento QR Code não encontrado');
             return;
         }
         
-        // Adicionar estilo à imagem para garantir que seja exibida corretamente
-        img.style.width = '100%';
-        img.style.height = 'auto';
-        img.style.maxWidth = '250px';
-        img.style.maxHeight = '250px';
-        img.style.display = 'block';
-        img.style.margin = '0 auto';
+        // Mostrar indicador de carregamento
+        qrContainer.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
-        // Adicionar evento para verificar se a imagem carregou corretamente
-        img.onload = function() {
-            console.log('QR Code carregado com sucesso');
-        };
-        
-        img.onerror = function(e) {
-            console.error('Erro ao carregar QR Code', e);
-            console.error('Source da imagem:', img.src.substring(0, 100) + '...');
-            qrContainer.innerHTML = '<div class="qr-error"><i class="fas fa-exclamation-triangle"></i><p>Erro ao carregar QR Code</p></div>';
-        };
-        
-        // Adicionar a imagem ao container e depois o texto
-        qrContainer.appendChild(img);
-        
-        updateStatusUIFunction('connecting', 'Escaneie o QR Code');
-        
-        // Adicionar logs para debug
-        if (typeof qrcode === 'string') {
-            console.log('QR Code exibido (string):', qrcode.substring(0, 50) + '...');
-        } else {
-            console.log('QR Code exibido (objeto):', JSON.stringify(qrcode).substring(0, 50) + '...');
+        // Atualizar status
+        if (updateStatusUIFunction) {
+            updateStatusUIFunction('connecting', 'Gerando QR Code...');
         }
         
-        // Iniciar verificação periódica do status
-        if (!qrCodeInterval) {
-            qrCodeInterval = setInterval(updateConnectionStatus, 3000);
-        }
-    } catch (error) {
-        console.error('Erro ao processar QR Code:', error);
-        qrContainer.innerHTML = '<div class="qr-error"><i class="fas fa-exclamation-triangle"></i><p>Erro ao processar QR Code</p></div>';
-        showNotification('error', 'Erro no QR Code', 'Não foi possível processar o QR Code');
-    }
-}
-
-// Função específica para iniciar uma sessão do WhatsApp
-async function startWhatsAppSession() {
-    try {
-        showNotification('info', 'Iniciando sessão', 'Iniciando sessão do WhatsApp...');
-        
-        // Verificar se temos um token válido
-        if (!sessionToken) {
-            const tokenGenerated = await generateSessionToken();
-            if (!tokenGenerated) {
-                throw new Error('Não foi possível gerar um token para a sessão');
-            }
-        }
-        
+        // Solicitar QR Code da API
         const options = {
             method: 'POST',
             headers: getHeaders(),
@@ -419,100 +326,77 @@ async function startWhatsAppSession() {
         };
         
         console.log(`Iniciando sessão: ${API_URL}/${session}/start-session`);
+        
         const response = await fetch(`${API_URL}/${session}/start-session`, options);
         
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Sessão iniciada com sucesso:', data);
-            showNotification('success', 'Sessão iniciada', 'A sessão do WhatsApp foi iniciada com sucesso');
-            
-            if (data && data.qrcode) {
-                console.log('QR Code recebido do servidor');
-                console.log('Tipo de QR Code recebido:', typeof data.qrcode);
-                console.log('Conteúdo (amostra):', typeof data.qrcode === 'string' 
-                    ? data.qrcode.substring(0, 50) + '...' 
-                    : JSON.stringify(data.qrcode).substring(0, 50) + '...');
-                
-                try {
-                    // Se o QR code for um objeto, tentar extrair a base64
-                    if (typeof data.qrcode === 'object' && data.qrcode !== null) {
-                        if (data.qrcode.base64Qr) {
-                            displayQRCode(data.qrcode.base64Qr);
-                        } else if (data.qrcode.qrcode) {
-                            displayQRCode(data.qrcode.qrcode);
-                        } else {
-                            // Se não conseguir encontrar o formato esperado, tentar passar o objeto completo
-                            displayQRCode(data.qrcode);
-                        }
-                    } else {
-                        // Se for uma string, passar diretamente
-                        displayQRCode(data.qrcode);
-                    }
-                } catch (e) {
-                    console.error('Erro ao exibir QR Code:', e);
-                    showNotification('error', 'Erro ao exibir QR Code', e.message || 'Ocorreu um erro ao exibir o QR Code');
-                }
+        if (!response.ok) {
+            throw new Error(`Erro ao iniciar sessão: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('QR Code recebido:', data);
+        
+        if (!data || !data.qrcode) {
+            throw new Error('QR Code não recebido do servidor');
+        }
+        
+        // Exibir QR Code - tentativa direta usando HTML e CSS inline
+        let qrSource = '';
+        
+        // Tentar extrair a string base64 independente do formato
+        if (typeof data.qrcode === 'string') {
+            qrSource = data.qrcode.startsWith('data:') 
+                ? data.qrcode 
+                : 'data:image/png;base64,' + data.qrcode;
+        } else if (typeof data.qrcode === 'object' && data.qrcode !== null) {
+            if (data.qrcode.base64Qr) {
+                qrSource = 'data:image/png;base64,' + data.qrcode.base64Qr;
+            } else if (data.qrcode.qrcode && typeof data.qrcode.qrcode === 'string') {
+                qrSource = data.qrcode.qrcode.startsWith('data:') 
+                    ? data.qrcode.qrcode 
+                    : 'data:image/png;base64,' + data.qrcode.qrcode;
             } else {
-                console.log('QR Code não encontrado na resposta:', data);
-                showNotification('warning', 'QR Code não encontrado', 'A resposta do servidor não contém um QR Code');
+                throw new Error('Formato de QR Code não reconhecido');
             }
-            
-            return true;
         } else {
-            const errorText = await response.text();
-            console.error(`Erro ao iniciar sessão: ${response.status} ${response.statusText}`);
-            console.error(`Detalhes: ${errorText}`);
-            
-            // Se o erro for 401, tentar gerar um novo token
-            if (response.status === 401) {
-                showNotification('error', 'Token inválido', 'Tentando gerar um novo token...');
-                const tokenGenerated = await generateSessionToken();
-                if (tokenGenerated) {
-                    // Tentar novamente com o novo token
-                    return startWhatsAppSession();
-                }
-            }
-            
-            showNotification('error', 'Erro ao iniciar sessão', `Falha ao iniciar sessão: ${response.status}`);
-            return false;
-        }
-    } catch (error) {
-        console.error('Erro ao iniciar sessão:', error);
-        showNotification('error', 'Erro de conexão', 'Não foi possível conectar ao servidor');
-        return false;
-    }
-}
-
-// Função global para buscar QR Code
-async function fetchQRCode() {
-    const qrContainer = document.querySelector('.qr-code');
-    if (!qrContainer) {
-        console.error('Elemento QR Code não encontrado');
-        return;
-    }
-    
-    if (!updateStatusUIFunction) {
-        console.error('updateStatusUIFunction não está definida');
-        showNotification('error', 'Erro interno', 'Erro na inicialização da interface');
-        return;
-    }
-    
-    // Configurar a aparência inicial
-    qrContainer.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    updateStatusUIFunction('connecting', 'Gerando QR Code...');
-    
-    try {
-        // Primeiro, iniciar a sessão
-        const sessionStarted = await startWhatsAppSession();
-        
-        if (!sessionStarted) {
-            throw new Error('Falha ao iniciar sessão');
+            throw new Error('Formato de QR Code não suportado');
         }
         
+        // Adicionar QR Code diretamente como atributo background-image
+        qrContainer.innerHTML = '';
+        qrContainer.style.backgroundImage = `url(${qrSource})`;
+        qrContainer.style.backgroundSize = 'contain';
+        qrContainer.style.backgroundPosition = 'center';
+        qrContainer.style.backgroundRepeat = 'no-repeat';
+        
+        // Atualizar status
+        if (updateStatusUIFunction) {
+            updateStatusUIFunction('connecting', 'Escaneie o QR Code');
+        }
+        
+        // Iniciar verificação periódica do status
+        if (!qrCodeInterval) {
+            qrCodeInterval = setInterval(updateConnectionStatus, 3000);
+        }
+        
+        // Notificar usuário
+        showNotification('success', 'QR Code Gerado', 'Escaneie o QR Code com seu WhatsApp');
+        
     } catch (error) {
-        console.error('Erro ao iniciar sessão:', error);
-        updateStatusUIFunction('disconnected', 'Erro de servidor');
-        showNotification('error', 'Erro de Conexão', error.message || 'Não foi possível conectar ao servidor');
+        console.error('Erro ao buscar QR Code:', error);
+        
+        const qrContainer = document.getElementById('qrcode');
+        if (qrContainer) {
+            qrContainer.innerHTML = '<div class="qr-error"><i class="fas fa-exclamation-triangle"></i><p>Erro ao gerar QR Code</p></div>';
+        }
+        
+        // Atualizar status
+        if (updateStatusUIFunction) {
+            updateStatusUIFunction('disconnected', 'Erro ao gerar QR Code');
+        }
+        
+        // Notificar usuário
+        showNotification('error', 'Erro', error.message || 'Erro ao gerar QR Code');
     }
 }
 
@@ -520,8 +404,8 @@ async function fetchQRCode() {
 function initQRCode() {
     console.log("Inicializando QR Code...");
     
-    const qrContainer = document.querySelector('.qr-code');
-    const connectBtn = document.querySelector('.connect-btn');
+    const qrContainer = document.getElementById('qrcode');
+    const connectBtn = document.getElementById('connect-btn');
     const statusTextElement = document.getElementById('connection-status-text');
     
     // Verificar se todos os elementos necessários estão presentes
@@ -558,7 +442,7 @@ function initQRCode() {
             connectBtn.innerHTML = '<i class="fas fa-link-slash"></i> Desconectar';
             connectBtn.setAttribute('data-tooltip', 'Desconectar WhatsApp');
         } else if (status === 'connecting') {
-            qrContainer.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            // Não modificar o QR code quando estiver conectando
         } else if (status === 'disconnected') {
             qrContainer.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
             connectBtn.innerHTML = '<i class="fas fa-sync"></i> Gerar Novo QR Code';
@@ -571,7 +455,7 @@ function initQRCode() {
     
     // Inicializa com status desconectado
     updateStatusUI('disconnected', 'Desconectado');
-
+    
     // Função para desconectar
     async function disconnect() {
         if (!updateStatusUIFunction) {
@@ -903,6 +787,54 @@ async function init() {
     
     // Disponibilizar funções globalmente
     window.sendWhatsAppMessage = sendMessage;
+    
+    // Função especial para testar a exibição de QR Code diretamente
+    window.testQRCode = function() {
+        // QR Code de exemplo (uma imagem pequena em base64)
+        const testQrCode = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA30lEQVRoge2ZMQ6CQBBFn8baA3gUj0JtLT2JNpbewcIjeGprY2o3ycZiBggJzP5/yRSEeS+zu0MgiqIoiqIoiqIoyjiJHnXm3glYAxvg5JzbBVUVRETiTUS+9olKRFnHmiG0PLzARxP5C8YdKxmwB+bOuUdr4dnw9ZVIgeLIKYiRplmAFZDmcT2UmCFDlL5Dq9pIBtzD60qU7exn12oF3IA5sAvrrx8ZUfo+HvMrlZLJBnSSUeaOK6NUyGRB+skoK8bTuVqiRA0Z+svm7n3+NcMWWHoXKYqiKIqiKIryfzwBUss8kilwVikAAAAASUVORK5CYII=';
+        
+        console.log('Testando exibição direta de QR Code...');
+        
+        const qrContainer = document.querySelector('.qr-code');
+        if (!qrContainer) {
+            console.error('Elemento QR code não encontrado');
+            return;
+        }
+        
+        // Limpar container
+        qrContainer.innerHTML = '';
+        
+        // Criar elemento de imagem
+        const img = document.createElement('img');
+        
+        // Configurar atributos e estilo
+        img.alt = 'QR Code de Teste';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.position = 'absolute';
+        img.style.top = '0';
+        img.style.left = '0';
+        img.style.objectFit = 'contain';
+        
+        // Evento de carregamento
+        img.addEventListener('load', function() {
+            console.log('QR Code de teste carregado com sucesso');
+        });
+        
+        // Evento de erro
+        img.addEventListener('error', function(e) {
+            console.error('Erro ao carregar QR Code de teste', e);
+        });
+        
+        // Definir a fonte da imagem
+        img.src = testQrCode;
+        
+        // Adicionar ao DOM
+        qrContainer.appendChild(img);
+        
+        return 'Teste de QR Code iniciado - verifique a tela';
+    };
+    
     window.debugQRCode = function(base64String) {
         const qrContainer = document.querySelector('.qr-code');
         if (!qrContainer) {

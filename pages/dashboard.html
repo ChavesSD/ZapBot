@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Container de Notificações -->
+    <div class="notification-container"></div>
+
     <div class="container">
         <!-- Menu Lateral -->
         <nav class="sidebar">
@@ -15,30 +23,35 @@
                 <img src="../assets/ZAP Bot.png" alt="ZAP Bot Logo" class="sidebar-logo">
             </div>
             <ul class="sidebar-menu">
-                <li class="active" data-page="dashboard">
+                <li class="active" data-page="dashboard" data-tooltip="Dashboard">
                     <i class="fas fa-chart-line"></i>
                     <span>Dashboard</span>
                 </li>
-                <li data-page="connect">
+                <li data-page="connect" data-tooltip="Conectar WhatsApp">
                     <i class="fas fa-link"></i>
                     <span>Conectar</span>
                 </li>
-                <li data-page="flows">
+                <li data-page="flows" data-tooltip="Gerenciar Fluxos">
                     <i class="fas fa-project-diagram"></i>
                     <span>Fluxos</span>
                 </li>
-                <li data-page="settings">
+                <li data-page="settings" data-tooltip="Configurações">
                     <i class="fas fa-cog"></i>
                     <span>Configurações</span>
                 </li>
             </ul>
             <div class="sidebar-footer">
-                <button id="logoutBtn">
+                <button id="logoutBtn" data-tooltip="Sair">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Sair</span>
                 </button>
             </div>
         </nav>
+
+        <!-- Botão de Toggle do Menu (Mobile) -->
+        <button class="menu-toggle" data-tooltip="Menu">
+            <i class="fas fa-bars"></i>
+        </button>
 
         <!-- Conteúdo Principal -->
         <main class="main-content">
@@ -55,17 +68,17 @@
                 <div id="dashboard" class="page active">
                     <h2>Dashboard</h2>
                     <div class="dashboard-stats">
-                        <div class="stat-card">
+                        <div class="stat-card" data-tooltip="Total de mensagens enviadas">
                             <i class="fas fa-comments"></i>
                             <h3>Mensagens</h3>
                             <p>0</p>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card" data-tooltip="Total de contatos cadastrados">
                             <i class="fas fa-users"></i>
                             <h3>Contatos</h3>
                             <p>0</p>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card" data-tooltip="Fluxos de conversação ativos">
                             <i class="fas fa-robot"></i>
                             <h3>Fluxos Ativos</h3>
                             <p>0</p>
@@ -77,22 +90,34 @@
                     <h2>Conectar ZAP Bot</h2>
                     <div class="connect-container">
                         <div class="qr-code-container">
-                            <div class="qr-code">
+                            <div class="qr-code" id="qrcode">
                                 <i class="fas fa-qrcode"></i>
                             </div>
-                            <p>Escaneie o QR Code com seu WhatsApp</p>
+                            <button class="connect-btn" id="connect-btn" data-tooltip="Gerar novo QR Code">
+                                <i class="fas fa-sync"></i>
+                                Gerar Novo QR Code
+                            </button>
+                            <div class="connection-info">
+                                <h3>Para conectar seu WhatsApp:</h3>
+                                <ol>
+                                    <li>Clique em "Gerar Novo QR Code"</li>
+                                    <li>Abra o WhatsApp no seu celular</li>
+                                    <li>Toque em Menu ou Configurações</li>
+                                    <li>Selecione "WhatsApp Web"</li>
+                                    <li>Aponte seu celular para a tela para escanear o QR Code</li>
+                                </ol>
+                                <div class="connection-status">
+                                    <p>Status: <span id="connection-status-text">Desconectado</span></p>
+                                </div>
+                            </div>
                         </div>
-                        <button class="connect-btn">
-                            <i class="fas fa-sync"></i>
-                            Gerar Novo QR Code
-                        </button>
                     </div>
                 </div>
 
                 <div id="flows" class="page">
                     <h2>Fluxos de Conversação</h2>
                     <div class="flows-container">
-                        <button class="new-flow-btn">
+                        <button class="new-flow-btn" data-tooltip="Criar novo fluxo de conversação">
                             <i class="fas fa-plus"></i>
                             Novo Fluxo
                         </button>
@@ -106,7 +131,7 @@
                                 <label for="test-message">Mensagem:</label>
                                 <textarea id="test-message" placeholder="Digite sua mensagem..." required></textarea>
                             </div>
-                            <button id="send-test-message" class="send-btn">
+                            <button id="send-test-message" class="send-btn" data-tooltip="Enviar mensagem de teste">
                                 <i class="fas fa-paper-plane"></i>
                                 Enviar Mensagem
                             </button>
@@ -125,11 +150,11 @@
                             <h3>Configurações Gerais</h3>
                             <div class="setting-item">
                                 <label>Nome do Bot</label>
-                                <input type="text" value="ZAP Bot">
+                                <input type="text" value="ZAP Bot" data-tooltip="Nome que aparecerá nas mensagens">
                             </div>
                             <div class="setting-item">
                                 <label>Mensagem de Boas-vindas</label>
-                                <textarea>Olá! Sou o ZAP Bot. Como posso ajudar?</textarea>
+                                <textarea data-tooltip="Mensagem enviada quando um novo contato inicia conversa">Olá! Sou o ZAP Bot. Como posso ajudar?</textarea>
                             </div>
                         </div>
                     </div>
@@ -137,12 +162,11 @@
             </div>
         </main>
     </div>
-    <script src="../js/dashboard.js"></script>
 
     <!-- Modal Novo Fluxo -->
-    <div id="modalNovoFluxo" class="modal" style="display:none;">
+    <div id="modalNovoFluxo" class="modal">
         <div class="modal-content">
-            <span class="close" id="closeModalNovoFluxo">&times;</span>
+            <span class="close">&times;</span>
             <h2>Novo Fluxo de Perguntas e Respostas</h2>
             <form id="formNovoFluxo">
                 <div class="form-group">
@@ -158,10 +182,12 @@
                 <button type="button" id="addPerguntaResposta">Adicionar Pergunta/Resposta</button>
                 <div class="modal-actions">
                     <button type="submit" class="save">Salvar Fluxo</button>
-                    <button type="button" class="cancel" id="cancelNovoFluxo">Cancelar</button>
+                    <button type="button" class="cancel">Cancelar</button>
                 </div>
             </form>
         </div>
     </div>
+
+    <script src="../js/dashboard.js"></script>
 </body>
 </html> 
