@@ -349,20 +349,31 @@ function displayQRCode(qrcode) {
             }
         } else {
             console.error('Formato de QR code não reconhecido');
+            console.log('Conteúdo recebido:', qrcode);
             qrContainer.innerHTML = '<div class="qr-error"><i class="fas fa-exclamation-triangle"></i><p>Formato de QR Code não reconhecido</p></div>';
             return;
         }
+        
+        // Adicionar estilo à imagem para garantir que seja exibida corretamente
+        img.style.width = '100%';
+        img.style.height = 'auto';
+        img.style.maxWidth = '250px';
+        img.style.maxHeight = '250px';
+        img.style.display = 'block';
+        img.style.margin = '0 auto';
         
         // Adicionar evento para verificar se a imagem carregou corretamente
         img.onload = function() {
             console.log('QR Code carregado com sucesso');
         };
         
-        img.onerror = function() {
-            console.error('Erro ao carregar QR Code');
+        img.onerror = function(e) {
+            console.error('Erro ao carregar QR Code', e);
+            console.error('Source da imagem:', img.src.substring(0, 100) + '...');
             qrContainer.innerHTML = '<div class="qr-error"><i class="fas fa-exclamation-triangle"></i><p>Erro ao carregar QR Code</p></div>';
         };
         
+        // Adicionar a imagem ao container e depois o texto
         qrContainer.appendChild(img);
         
         updateStatusUIFunction('connecting', 'Escaneie o QR Code');
@@ -417,8 +428,26 @@ async function startWhatsAppSession() {
             
             if (data && data.qrcode) {
                 console.log('QR Code recebido do servidor');
+                console.log('Tipo de QR Code recebido:', typeof data.qrcode);
+                console.log('Conteúdo (amostra):', typeof data.qrcode === 'string' 
+                    ? data.qrcode.substring(0, 50) + '...' 
+                    : JSON.stringify(data.qrcode).substring(0, 50) + '...');
+                
                 try {
-                    displayQRCode(data.qrcode);
+                    // Se o QR code for um objeto, tentar extrair a base64
+                    if (typeof data.qrcode === 'object' && data.qrcode !== null) {
+                        if (data.qrcode.base64Qr) {
+                            displayQRCode(data.qrcode.base64Qr);
+                        } else if (data.qrcode.qrcode) {
+                            displayQRCode(data.qrcode.qrcode);
+                        } else {
+                            // Se não conseguir encontrar o formato esperado, tentar passar o objeto completo
+                            displayQRCode(data.qrcode);
+                        }
+                    } else {
+                        // Se for uma string, passar diretamente
+                        displayQRCode(data.qrcode);
+                    }
                 } catch (e) {
                     console.error('Erro ao exibir QR Code:', e);
                     showNotification('error', 'Erro ao exibir QR Code', e.message || 'Ocorreu um erro ao exibir o QR Code');
@@ -872,8 +901,39 @@ async function init() {
     // Inicializar botão de envio de mensagem de teste
     initSendMessageButton();
     
-    // Disponibilizar função de envio globalmente
+    // Disponibilizar funções globalmente
     window.sendWhatsAppMessage = sendMessage;
+    window.debugQRCode = function(base64String) {
+        const qrContainer = document.querySelector('.qr-code');
+        if (!qrContainer) {
+            console.error('Elemento QR Code não encontrado');
+            return;
+        }
+        
+        console.log('Tentando exibir QR Code via Debug');
+        
+        // Limpar container
+        qrContainer.innerHTML = '';
+        
+        // Criar imagem
+        const img = document.createElement('img');
+        img.src = base64String.startsWith('data:image/') 
+            ? base64String 
+            : 'data:image/png;base64,' + base64String;
+            
+        // Aplicar estilos
+        img.style.width = '100%';
+        img.style.height = 'auto';
+        img.style.maxWidth = '250px';
+        img.style.maxHeight = '250px';
+        img.style.display = 'block';
+        img.style.margin = '0 auto';
+        
+        // Adicionar ao DOM
+        qrContainer.appendChild(img);
+        
+        console.log('QR Code adicionado via debug');
+    };
 }
 
 // Iniciar quando o DOM estiver carregado
