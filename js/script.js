@@ -63,15 +63,15 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 // Aqui você faria a requisição real ao servidor
                 if (emailInput.value === 'adm@zapbot.com' && passwordInput.value === 'adm123') {
-                    // Salvar credenciais se "Lembrar senha" estiver marcado
+                    // Sempre armazenar o email para identificação do usuário
+                    localStorage.setItem('savedEmail', emailInput.value);
+                    localStorage.setItem('loggedIn', 'true');
+                    
+                    // Salvar a senha apenas se "Lembrar senha" estiver marcado
                     if (document.getElementById('remember').checked) {
-                        localStorage.setItem('savedEmail', emailInput.value);
                         localStorage.setItem('savedPassword', passwordInput.value);
-                        localStorage.setItem('loggedIn', 'true');
                     } else {
-                        localStorage.removeItem('savedEmail');
                         localStorage.removeItem('savedPassword');
-                        localStorage.setItem('loggedIn', 'true');
                     }
                     
                     // Redirecionar para o dashboard
