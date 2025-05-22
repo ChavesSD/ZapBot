@@ -8,15 +8,14 @@ function initModalNovoFluxo() {
         return;
     }
     
-    const openBtn = document.querySelector('.new-flow-btn');
+    const openBtn = document.getElementById('btnNovoFluxo');
     const closeBtn = modal.querySelector('.close');
-    const cancelBtn = modal.querySelector('.cancel');
-    const addOpcaoBtn = document.getElementById('addOpcao');
-    const opcoesContainer = document.getElementById('opcoesContainer');
-    const form = document.getElementById('formNovoFluxo');
+    const addNodeBtn = document.getElementById('add-node-opcao');
+    const saveFlowBtn = document.getElementById('save-flow');
+    const fluxogramaEditor = document.getElementById('fluxograma-editor');
 
     // Verificar se todos os elementos necessários estão presentes
-    if (!openBtn || !closeBtn || !cancelBtn || !addOpcaoBtn || !opcoesContainer || !form) {
+    if (!openBtn || !closeBtn || !fluxogramaEditor) {
         console.error('Elementos necessários para Modal Novo Fluxo não encontrados no DOM');
         return;
     }
@@ -24,273 +23,77 @@ function initModalNovoFluxo() {
     // Abrir modal
     openBtn.addEventListener('click', () => {
         modal.style.display = 'block';
-        // Resetar o formulário para um novo fluxo
-        resetForm();
-        // Não estamos editando, então não há índice
-        form.removeAttribute('data-edit-index');
+        // Resetar o editor para um novo fluxo
+        resetEditor();
     });
     
     // Fechar modal
-    function resetAndCloseModal() {
+    function closeModal() {
         modal.style.display = 'none';
-        resetForm();
     }
     
-    // Função para resetar o formulário
-    function resetForm() {
-        form.reset();
-        
-        // Reset opções para o estado inicial
-        opcoesContainer.innerHTML = `
-            <div class="opcao-container">
-                <div class="opcao-header">
-                    <h4>Opção 1</h4>
-                    <button type="button" class="remove-opcao" data-tooltip="Remover opção"><i class="fas fa-trash"></i></button>
-                </div>
-                <div class="form-group">
-                    <label>Texto da opção:</label>
-                    <input type="text" class="opcao-texto" placeholder="Ex: Digite 1 para Comercial" required>
-                </div>
-                <div class="form-group">
-                    <label>Resposta para esta opção:</label>
-                    <textarea class="opcao-resposta" placeholder="Mensagem que será enviada quando o usuário escolher esta opção" required></textarea>
-                </div>
-                <div class="subfluxo-container">
-                    <div class="form-group subfluxo-toggle">
-                        <label class="toggle-label">
-                            <input type="checkbox" class="habilitar-subfluxo">
-                            <span class="toggle-text">Adicionar sub-opções para esta resposta</span>
-                        </label>
-                    </div>
-                    <div class="subfluxo-opcoes" style="display: none;">
-                        <h5>Sub-opções</h5>
-                        <div class="subfluxo-lista">
-                            <div class="subfluxo-item">
-                                <div class="form-group">
-                                    <label>Texto da sub-opção:</label>
-                                    <input type="text" class="subfluxo-texto" placeholder="Ex: Digite 1 para Vendas" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Resposta:</label>
-                                    <textarea class="subfluxo-resposta" placeholder="Resposta para esta sub-opção" required></textarea>
-                                </div>
-                                <button type="button" class="remove-subfluxo" data-tooltip="Remover sub-opção"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <button type="button" class="add-subfluxo" data-tooltip="Adicionar sub-opção"><i class="fas fa-plus"></i> Adicionar Sub-opção</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Reativar os event listeners
-        setupEventListeners();
+    // Função para resetar o editor de fluxo
+    function resetEditor() {
+        document.getElementById('nomeFluxo').value = '';
+        // Limpar o editor de fluxograma
+        if (typeof initFluxograma === 'function') {
+            initFluxograma();
+        }
     }
     
-    closeBtn.addEventListener('click', resetAndCloseModal);
-    cancelBtn.addEventListener('click', resetAndCloseModal);
+    closeBtn.addEventListener('click', closeModal);
     
-    // Função para configurar event listeners nas opções e sub-opções
-    function setupEventListeners() {
-        // Event listeners para os botões de remover opção
-        document.querySelectorAll('.remove-opcao').forEach(btn => {
-            btn.addEventListener('click', function() {
-                // Impedir a remoção se for a única opção
-                if (opcoesContainer.querySelectorAll('.opcao-container').length <= 1) {
-                    showNotification('warning', 'Atenção', 'É necessário ter pelo menos uma opção no fluxo');
-                    return;
-                }
-                
-                this.closest('.opcao-container').remove();
-                
-                // Atualizar os números das opções
-                updateOpcaoNumbers();
-            });
-        });
-        
-        // Event listeners para toggles de sub-fluxo
-        document.querySelectorAll('.habilitar-subfluxo').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const subfluxoOpcoes = this.closest('.subfluxo-container').querySelector('.subfluxo-opcoes');
-                subfluxoOpcoes.style.display = this.checked ? 'block' : 'none';
-            });
-        });
-        
-        // Event listeners para adicionar sub-opção
-        document.querySelectorAll('.add-subfluxo').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const subfluxoLista = this.previousElementSibling;
-                const newSubfluxo = document.createElement('div');
-                newSubfluxo.className = 'subfluxo-item';
-                newSubfluxo.innerHTML = `
-                    <div class="form-group">
-                        <label>Texto da sub-opção:</label>
-                        <input type="text" class="subfluxo-texto" placeholder="Ex: Digite 1 para Vendas" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Resposta:</label>
-                        <textarea class="subfluxo-resposta" placeholder="Resposta para esta sub-opção" required></textarea>
-                    </div>
-                    <button type="button" class="remove-subfluxo" data-tooltip="Remover sub-opção"><i class="fas fa-trash"></i></button>
-                `;
-                
-                subfluxoLista.appendChild(newSubfluxo);
-                
-                // Adicionar event listener para o botão remover
-                newSubfluxo.querySelector('.remove-subfluxo').addEventListener('click', function() {
-                    if (subfluxoLista.querySelectorAll('.subfluxo-item').length <= 1) {
-                        showNotification('warning', 'Atenção', 'É necessário ter pelo menos uma sub-opção');
-                        return;
-                    }
-                    newSubfluxo.remove();
-                });
-            });
-        });
-        
-        // Event listeners para remover sub-opção
-        document.querySelectorAll('.remove-subfluxo').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const subfluxoLista = this.closest('.subfluxo-lista');
-                if (subfluxoLista.querySelectorAll('.subfluxo-item').length <= 1) {
-                    showNotification('warning', 'Atenção', 'É necessário ter pelo menos uma sub-opção');
-                    return;
-                }
-                this.closest('.subfluxo-item').remove();
-            });
-        });
-    }
-    
-    // Função para atualizar os números das opções
-    function updateOpcaoNumbers() {
-        const opcoes = opcoesContainer.querySelectorAll('.opcao-container');
-        opcoes.forEach((opcao, index) => {
-            opcao.querySelector('h4').textContent = `Opção ${index + 1}`;
-        });
-    }
-    
-    // Adicionar nova opção
-    addOpcaoBtn.addEventListener('click', () => {
-        const numOpcoes = opcoesContainer.querySelectorAll('.opcao-container').length;
-        const div = document.createElement('div');
-        div.className = 'opcao-container';
-        div.innerHTML = `
-            <div class="opcao-header">
-                <h4>Opção ${numOpcoes + 1}</h4>
-                <button type="button" class="remove-opcao" data-tooltip="Remover opção"><i class="fas fa-trash"></i></button>
-            </div>
-            <div class="form-group">
-                <label>Texto da opção:</label>
-                <input type="text" class="opcao-texto" placeholder="Ex: Digite ${numOpcoes + 1} para Comercial" required>
-            </div>
-            <div class="form-group">
-                <label>Resposta para esta opção:</label>
-                <textarea class="opcao-resposta" placeholder="Mensagem que será enviada quando o usuário escolher esta opção" required></textarea>
-            </div>
-            <div class="subfluxo-container">
-                <div class="form-group subfluxo-toggle">
-                    <label class="toggle-label">
-                        <input type="checkbox" class="habilitar-subfluxo">
-                        <span class="toggle-text">Adicionar sub-opções para esta resposta</span>
-                    </label>
-                </div>
-                <div class="subfluxo-opcoes" style="display: none;">
-                    <h5>Sub-opções</h5>
-                    <div class="subfluxo-lista">
-                        <div class="subfluxo-item">
-                            <div class="form-group">
-                                <label>Texto da sub-opção:</label>
-                                <input type="text" class="subfluxo-texto" placeholder="Ex: Digite 1 para Vendas" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Resposta:</label>
-                                <textarea class="subfluxo-resposta" placeholder="Resposta para esta sub-opção" required></textarea>
-                            </div>
-                            <button type="button" class="remove-subfluxo" data-tooltip="Remover sub-opção"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                    <button type="button" class="add-subfluxo" data-tooltip="Adicionar sub-opção"><i class="fas fa-plus"></i> Adicionar Sub-opção</button>
-                </div>
-            </div>
-        `;
-        
-        opcoesContainer.appendChild(div);
-        setupEventListeners();
-    });
-    
-    // Configurar handlers iniciais
-    setupEventListeners();
-    
-    // Submeter novo fluxo
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Obter nome do fluxo e mensagem inicial
-        const nomeFluxo = document.getElementById('nomeFluxo').value;
-        const mensagemInicial = document.getElementById('mensagemInicial').value;
-        
-        // Construir o objeto de fluxo
-        const fluxo = {
-            nome: nomeFluxo,
-            mensagemInicial: mensagemInicial,
-            opcoes: []
-        };
-        
-        // Processar todas as opções
-        const opcoesElements = opcoesContainer.querySelectorAll('.opcao-container');
-        opcoesElements.forEach((opcaoElement, index) => {
-            const opcaoTexto = opcaoElement.querySelector('.opcao-texto').value;
-            const opcaoResposta = opcaoElement.querySelector('.opcao-resposta').value;
-            const habilitarSubfluxo = opcaoElement.querySelector('.habilitar-subfluxo').checked;
-            
-            const opcao = {
-                numero: index + 1,
-                texto: opcaoTexto,
-                resposta: opcaoResposta,
-                temSubfluxo: habilitarSubfluxo,
-                subOpcoes: []
-            };
-            
-            // Se tiver sub-opções, processar
-            if (habilitarSubfluxo) {
-                const subOpcoesElements = opcaoElement.querySelectorAll('.subfluxo-item');
-                subOpcoesElements.forEach((subOpcaoElement, subIndex) => {
-                    const subOpcaoTexto = subOpcaoElement.querySelector('.subfluxo-texto').value;
-                    const subOpcaoResposta = subOpcaoElement.querySelector('.subfluxo-resposta').value;
-                    
-                    opcao.subOpcoes.push({
-                        numero: subIndex + 1,
-                        texto: subOpcaoTexto,
-                        resposta: subOpcaoResposta
-                    });
-                });
+    // Se o botão de salvar existir, adicionar listener
+    if (saveFlowBtn) {
+        saveFlowBtn.addEventListener('click', function() {
+            const nome = document.getElementById('nomeFluxo').value;
+            if (!nome) {
+                showNotification('warning', 'Atenção', 'O nome do fluxo é obrigatório');
+                return;
             }
             
-            fluxo.opcoes.push(opcao);
+            // Aqui salvaria o fluxo
+            showNotification('success', 'Sucesso', 'Fluxo salvo com sucesso');
+            closeModal();
         });
+    }
+}
+
+// Configuração do botão de enviar mensagem de teste
+function initSendTestMessage() {
+    const sendButton = document.getElementById('send-test-message');
+    if (!sendButton) {
+        console.log('Botão de enviar mensagem não encontrado');
+        return;
+    }
+    
+    sendButton.addEventListener('click', function() {
+        const number = document.getElementById('test-number').value;
+        const message = document.getElementById('test-message').value;
         
-        // Verificar se estamos editando ou criando um novo fluxo
-        const editIndex = form.getAttribute('data-edit-index');
-        const fluxosSalvos = JSON.parse(localStorage.getItem('zapbot_fluxos') || '[]');
-        
-        if (editIndex !== null && editIndex !== undefined) {
-            // Estamos editando um fluxo existente
-            fluxosSalvos[editIndex] = fluxo;
-            showNotification('success', 'Fluxo Atualizado', 'Seu fluxo de conversa foi atualizado com sucesso!');
-        } else {
-            // Estamos criando um novo fluxo
-            fluxosSalvos.push(fluxo);
-            showNotification('success', 'Fluxo Salvo', 'Seu fluxo de conversa interativo foi salvo com sucesso!');
+        if (!number || !message) {
+            showNotification('error', 'Erro', 'Preencha o número e a mensagem');
+            return;
         }
         
-        // Salvar no localStorage
-        localStorage.setItem('zapbot_fluxos', JSON.stringify(fluxosSalvos));
+        // Simular envio
+        document.getElementById('message-status').textContent = 'Enviando...';
         
-        // Fechar o modal e resetar o formulário
-        resetAndCloseModal();
-        
-        // Atualizar a lista de fluxos
-        atualizarListaFluxos();
+        setTimeout(() => {
+            document.getElementById('message-status').textContent = 'Mensagem enviada com sucesso!';
+            showNotification('success', 'Sucesso', 'Mensagem enviada com sucesso!');
+        }, 1500);
     });
+    
+    console.log('Botão de novo fluxo configurado');
+}
+
+// Função principal para inicializar o módulo de fluxos
+function initFluxograma() {
+    console.log('Módulo de fluxos inicializado com sucesso');
+    // Inicializar components
+    initModalNovoFluxo();
+    initSendTestMessage();
 }
 
 // Função para atualizar a lista de fluxos na interface

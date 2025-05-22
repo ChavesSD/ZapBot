@@ -413,21 +413,20 @@ async function fetchQRCode() {
 
 // Inicializar a página de QR Code
 function initQRCode() {
-    const qrTab = document.getElementById('qrTab');
+    const qrTab = document.getElementById('connect');
     
     if (!qrTab) {
-        console.error('Tab de QR Code não encontrada');
+        console.error('Tab de conexão não encontrada');
         return;
     }
     
     // Botão gerar QR Code
-    const generateQRButton = document.getElementById('generateQR');
+    const generateQRButton = document.getElementById('connect-btn');
     const disconnectButton = document.getElementById('disconnectWhatsApp');
     
     // Função para atualizar a UI com base no status
     updateStatusUIFunction = function(status, message) {
-        const statusElement = document.getElementById('connectionStatus');
-        const statusIconElement = document.getElementById('connectionStatusIcon');
+        const statusElement = document.getElementById('connection-status-text');
         
         if (statusElement) {
             statusElement.textContent = message;
@@ -437,31 +436,6 @@ function initQRCode() {
             
             // Adicionar classe apropriada
             statusElement.classList.add(`status-${status}`);
-        }
-        
-        if (statusIconElement) {
-            // Atualizar ícone
-            statusIconElement.className = ''; // Limpar classes anteriores
-            statusIconElement.classList.add('fas');
-            
-            // Adicionar classe de ícone apropriada
-            switch(status) {
-                case 'connected':
-                    statusIconElement.classList.add('fa-check-circle', 'status-icon-connected');
-                    break;
-                case 'connecting':
-                    statusIconElement.classList.add('fa-spinner', 'fa-spin', 'status-icon-connecting');
-                    break;
-                case 'qrReady':
-                    statusIconElement.classList.add('fa-qrcode', 'status-icon-qrReady');
-                    break;
-                case 'disconnected':
-                    statusIconElement.classList.add('fa-times-circle', 'status-icon-disconnected');
-                    break;
-                case 'error':
-                    statusIconElement.classList.add('fa-exclamation-triangle', 'status-icon-error');
-                    break;
-            }
         }
     };
     
@@ -486,7 +460,7 @@ function initQRCode() {
                 // Limpar o QR Code
                 const qrCodeElement = document.getElementById('qrcode');
                 if (qrCodeElement) {
-                    qrCodeElement.innerHTML = '<div class="qrcode-placeholder">QR Code será gerado aqui</div>';
+                    qrCodeElement.innerHTML = '<i class="fas fa-qrcode"></i>';
                 }
                 
                 // Limpar o intervalo de verificação
@@ -521,10 +495,10 @@ function initQRCode() {
 
 // Inicializar a página de novos fluxos
 function initNewFlow() {
-    const newFlowTab = document.getElementById('newFlowTab');
+    const newFlowTab = document.getElementById('flows');
     
     if (!newFlowTab) {
-        console.error('Tab de novo fluxo não encontrada');
+        console.error('Tab de fluxos não encontrada');
         return;
     }
     
@@ -536,7 +510,7 @@ function initNewFlow() {
 
 // Inicializar a página de configurações
 function initSettings() {
-    const settingsTab = document.getElementById('settingsTab');
+    const settingsTab = document.getElementById('settings');
     
     if (!settingsTab) {
         console.error('Tab de configurações não encontrada');
@@ -636,16 +610,17 @@ async function checkToken() {
 
 // Inicializar botão de envio de mensagem
 function initSendMessageButton() {
-    const messageTab = document.getElementById('messageTab');
+    const messageTab = document.getElementById('flows');
     
     if (!messageTab) {
         console.error('Tab de mensagens não encontrada');
         return;
     }
     
-    const sendMessageForm = document.getElementById('sendMessageForm');
-    const phoneNumberInput = document.getElementById('phoneNumber');
-    const messageTextarea = document.getElementById('messageText');
+    const sendMessageForm = document.querySelector('.test-message-form');
+    const phoneNumberInput = document.getElementById('test-number');
+    const messageTextarea = document.getElementById('test-message');
+    const sendButton = document.getElementById('send-test-message');
     
     // Carregar última mensagem enviada
     const lastMessageNumber = localStorage.getItem('lastMessageNumber');
@@ -659,8 +634,8 @@ function initSendMessageButton() {
         messageTextarea.value = lastMessageText;
     }
     
-    if (sendMessageForm) {
-        sendMessageForm.addEventListener('submit', async (e) => {
+    if (sendButton) {
+        sendButton.addEventListener('click', async (e) => {
             e.preventDefault();
             
             // Verificar conexão antes de enviar
