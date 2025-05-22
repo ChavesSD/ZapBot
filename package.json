@@ -1,0 +1,31 @@
+{
+  "name": "zapbot",
+  "version": "1.0.0",
+  "description": "Um bot para WhatsApp com interface web para gerenciamento.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChavesSD/ZapBot.git"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "chatbot"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ChavesSD/ZapBot/issues"
+  },
+  "homepage": "https://github.com/ChavesSD/ZapBot#readme",
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": "16.x"
+  }
+}
