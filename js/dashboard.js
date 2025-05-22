@@ -54,7 +54,7 @@ function updateUserInfo() {
 }
 
 // Configuração da API
-const API_URL = 'https://zapbot-wpp.herokuapp.com/api';
+const API_URL = window.location.origin + '/api';
 // Variável global para armazenar a sessão
 let session = 'adm'; // Usamos o mesmo nome da sessão que aparece no e-mail (adm@zapbot.com)
 // Token de autenticação para o WPPConnect
