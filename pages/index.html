@@ -5,27 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZAP Bot - Login</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <div class="login-box">
             <img src="../assets/ZAP Bot Verde.png" alt="ZAP Bot Logo" class="login-logo">
-            <form id="loginForm">
+            <form id="loginForm" novalidate>
                 <div class="input-group">
-                    <input type="email" id="email" placeholder="Email" required>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" id="email" placeholder="Email" required>
+                        <span class="input-focus-border"></span>
+                    </div>
+                    <span class="error-text" id="emailError"></span>
                 </div>
                 <div class="input-group">
-                    <input type="password" id="password" placeholder="Senha" required>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" id="password" placeholder="Senha" required>
+                        <i class="fas fa-eye toggle-password"></i>
+                        <span class="input-focus-border"></span>
+                    </div>
+                    <span class="error-text" id="passwordError"></span>
                 </div>
                 <div class="remember-me">
                     <input type="checkbox" id="remember" name="remember">
                     <label for="remember">Lembrar senha</label>
+                    <a href="#" id="forgotPassword" class="forgot-password">Esqueceu a senha?</a>
                 </div>
-                <button type="submit">Entrar</button>
+                <button type="submit" class="login-button">
+                    <span class="button-text">Entrar</span>
+                    <div class="button-loader"></div>
+                </button>
             </form>
             <div id="error-message" class="error-message"></div>
         </div>
     </div>
+
+    <!-- Modal de Recuperação de Senha -->
+    <div id="recoveryModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Recuperar Senha</h2>
+            <p>Digite seu email para receber as instruções de recuperação de senha.</p>
+            <form id="recoveryForm">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" id="recoveryEmail" placeholder="Email" required>
+                        <span class="input-focus-border"></span>
+                    </div>
+                    <span class="error-text" id="recoveryEmailError"></span>
+                </div>
+                <button type="submit" class="recovery-button">
+                    <span class="button-text">Enviar</span>
+                    <div class="button-loader"></div>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <footer class="footer">
         <p>&copy; 2024 ZAP Bot. Todos os direitos reservados.</p>
     </footer>

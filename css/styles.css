@@ -8,6 +8,9 @@
     --border-color: rgba(255, 255, 255, 0.2);
     --error-color: #e74c3c;
     --success-color: #4CAF50;
+    --input-border: #ddd;
+    --input-focus: #25D366;
+    --modal-bg: rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -21,15 +24,21 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     background-color: var(--secondary-color);
     position: relative;
+    padding: 20px;
 }
 
 .container {
     width: 100%;
     max-width: 400px;
-    padding: 0 20px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .login-box {
@@ -38,13 +47,12 @@ body {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     padding: 30px;
     width: 100%;
-    max-width: 400px;
     text-align: center;
+    transition: transform 0.3s ease;
 }
 
-.login-box h2 {
-    margin-bottom: 20px;
-    color: var(--primary-color);
+.login-box:hover {
+    transform: translateY(-5px);
 }
 
 .login-logo {
@@ -52,30 +60,100 @@ body {
     height: auto;
     margin: 0 auto 25px;
     display: block;
+    animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
 }
 
 .input-group {
     margin-bottom: 20px;
+    position: relative;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    color: #666;
+    transition: color 0.3s;
 }
 
 input {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
+    padding: 12px 12px 12px 40px;
+    border: 1px solid var(--input-border);
     border-radius: 5px;
     font-size: 16px;
-    transition: border-color 0.3s;
+    transition: all 0.3s;
 }
 
 input:focus {
     outline: none;
-    border-color: #25D366;
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.1);
+}
+
+input:focus + .input-icon {
+    color: var(--input-focus);
+}
+
+.input-focus-border {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--input-focus);
+    transition: width 0.3s;
+}
+
+input:focus ~ .input-focus-border {
+    width: 100%;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.toggle-password:hover {
+    color: var(--input-focus);
+}
+
+.error-text {
+    color: var(--error-color);
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+    text-align: left;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s;
+}
+
+.error-text.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .remember-me {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .remember-me input[type="checkbox"] {
@@ -89,7 +167,19 @@ input:focus {
     cursor: pointer;
 }
 
-button[type="submit"] {
+.forgot-password {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s;
+}
+
+.forgot-password:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.login-button {
     width: 100%;
     padding: 12px;
     background-color: var(--primary-color);
@@ -98,17 +188,138 @@ button[type="submit"] {
     border-radius: 5px;
     font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
 }
 
-button[type="submit"]:hover {
+.login-button:hover {
     background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.login-button:active {
+    transform: translateY(0);
+}
+
+.button-loader {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.login-button.loading .button-text {
+    visibility: hidden;
+}
+
+.login-button.loading .button-loader {
+    display: block;
 }
 
 .error-message {
     color: var(--error-color);
     margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: rgba(231, 76, 60, 0.1);
     display: none;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Modal de Recuperação de Senha */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--modal-bg);
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal-content {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close-modal:hover {
+    color: var(--error-color);
+}
+
+.modal h2 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.modal p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    .login-box {
+        padding: 20px;
+    }
+
+    .login-logo {
+        max-width: 150px;
+    }
+
+    input {
+        font-size: 14px;
+    }
+
+    .remember-me {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .forgot-password {
+        margin-top: 10px;
+    }
 }
 
 .footer {
