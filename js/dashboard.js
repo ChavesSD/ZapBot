@@ -81,8 +81,8 @@ async function updateConnectionStatus() {
     try {
         // Não alterar o status para "connecting" durante verificação
         // para evitar sobrescrever o status "connected" ou "disconnected"
-        console.log(`Verificando status: ${API_URL}/adm/status-session`);
-        const response = await fetch(`${API_URL}/adm/status-session`, {
+        console.log(`Verificando status: ${API_URL}/whatsapp/status-session`);
+        const response = await fetch(`${API_URL}/whatsapp/status-session`, {
             method: 'GET',
             headers: getHeaders()
         });
@@ -144,7 +144,7 @@ function getHeaders(contentType = 'application/json') {
 // Função para gerar um token específico para a sessão
 async function generateSessionToken() {
     try {
-        const url = `${API_URL}/adm/${API_TOKEN}/generate-token`;
+        const url = `${API_URL}/whatsapp/generate-token`;
         console.log(`Gerando token para sessão adm: ${url}`);
         
         const response = await fetch(url, { method: 'POST' });
@@ -177,8 +177,8 @@ async function generateSessionToken() {
 // Função para fazer requisições autenticadas
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
-        // O formato correto da URL é /api/adm/endpoint
-        const url = `${API_URL}/adm/${endpoint}`;
+        // O formato correto da URL é /api/whatsapp/endpoint
+        const url = `${API_URL}/whatsapp/${endpoint}`;
         console.log(`Fazendo requisição para: ${url}`);
         
         const options = {
@@ -201,516 +201,516 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
             } catch (e) {
                 console.error('Não foi possível ler o corpo da resposta');
             }
+            
+            // Se o erro for 401 (não autorizado), talvez precisemos gerar um novo token
+            if (response.status === 401) {
+                console.log('Tentando gerar um novo token devido a erro 401...');
+                const tokenSuccess = await generateSessionToken();
+                
+                if (tokenSuccess) {
+                    // Tentar novamente com o novo token
+                    console.log('Novo token gerado. Tentando requisição novamente...');
+                    
+                    const retryOptions = {
+                        method,
+                        headers: getHeaders()
+                    };
+                    
+                    if (body && method !== 'GET') {
+                        retryOptions.body = JSON.stringify(body);
+                    }
+                    
+                    return await fetch(url, retryOptions);
+                }
+            }
+            
+            throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
         }
         
         return response;
     } catch (error) {
-        console.error('Erro na requisição API:', error);
+        console.error(`Erro em apiRequest para ${endpoint}:`, error);
         throw error;
     }
 }
 
-// Sistema de Notificações
+// Função para mostrar notificações
 function showNotification(type, title, message, duration = 5000) {
-    console.log(`Mostrando notificação: ${type} - ${title} - ${message}`);
-    
-    const container = document.querySelector('.notification-container');
-    if (!container) {
+    const notificationContainer = document.getElementById('notificationContainer');
+    if (!notificationContainer) {
         console.error('Container de notificações não encontrado');
         return;
     }
     
+    // Criar elemento de notificação
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
+    notification.classList.add('notification', `notification-${type}`);
     
-    // Ícone com base no tipo
+    // Adicionar ícone com base no tipo
     let icon = '';
     switch (type) {
         case 'success':
-            icon = 'check-circle';
+            icon = '<i class="fas fa-check-circle"></i>';
             break;
         case 'error':
-            icon = 'exclamation-circle';
+            icon = '<i class="fas fa-exclamation-circle"></i>';
             break;
         case 'warning':
-            icon = 'exclamation-triangle';
+            icon = '<i class="fas fa-exclamation-triangle"></i>';
             break;
+        case 'info':
         default:
-            icon = 'info-circle';
+            icon = '<i class="fas fa-info-circle"></i>';
+            break;
     }
     
+    // Montar conteúdo HTML
     notification.innerHTML = `
         <div class="notification-icon">
-            <i class="fas fa-${icon}"></i>
+            ${icon}
         </div>
         <div class="notification-content">
             <div class="notification-title">${title}</div>
             <div class="notification-message">${message}</div>
         </div>
-        <div class="notification-close">
-            <i class="fas fa-times"></i>
-        </div>
+        <button class="notification-close">&times;</button>
     `;
     
-    container.appendChild(notification);
+    // Adicionar ao container
+    notificationContainer.appendChild(notification);
     
-    // Exibir após um pequeno delay para permitir a animação
-    setTimeout(() => notification.classList.add('show'), 10);
+    // Adicionar classe para animar entrada
+    setTimeout(() => {
+        notification.classList.add('notification-show');
+    }, 10);
     
-    // Configurar fechamento
-    const closeBtn = notification.querySelector('.notification-close');
-    closeBtn.addEventListener('click', () => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
+    // Botão para fechar
+    const closeButton = notification.querySelector('.notification-close');
+    closeButton.addEventListener('click', () => {
+        closeNotification(notification);
     });
     
-    // Auto-fechar após duração especificada
-    if (duration > 0) {
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.classList.remove('show');
-                setTimeout(() => notification.remove(), 300);
-            }
-        }, duration);
-    }
-    
-    return notification;
+    // Auto-fechar após duração
+    setTimeout(() => {
+        closeNotification(notification);
+    }, duration);
 }
 
-// Função para exibir erros em formato amigável
-function handleApiError(error, defaultMessage = 'Ocorreu um erro na operação.') {
-    console.error('Erro de API:', error);
+// Função para fechar notificação com animação
+function closeNotification(notification) {
+    notification.classList.remove('notification-show');
+    notification.classList.add('notification-hide');
     
+    // Remover após animação
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 300);
+}
+
+// Função para lidar com erros de API
+function handleApiError(error, defaultMessage = 'Ocorreu um erro na operação.') {
     let message = defaultMessage;
-    if (error.response) {
-        // O servidor respondeu com um status de erro
-        message = `Erro ${error.response.status}: ${error.response.statusText || 'Erro desconhecido'}`;
-    } else if (error.request) {
-        // A requisição foi feita mas não houve resposta
-        message = 'Sem resposta do servidor. Verifique sua conexão.';
-    } else if (error.message) {
-        // Erro na configuração da requisição
+    
+    if (error && error.response && error.response.data && error.response.data.message) {
+        message = error.response.data.message;
+    } else if (error && error.message) {
         message = error.message;
     }
     
     showNotification('error', 'Erro', message);
+    console.error('Erro na API:', error);
 }
 
-// Função para buscar QR Code
+// Função para salvar a última mensagem enviada no localStorage
+function saveLastMessage(number, message) {
+    localStorage.setItem('lastMessageNumber', number);
+    localStorage.setItem('lastMessageText', message);
+    showNotification('info', 'Mensagem salva', 'Sua última mensagem foi salva localmente');
+}
+
+// Função para obter o QR Code
 async function fetchQRCode() {
     try {
-        const qrContainer = document.getElementById('qrcode');
-        if (!qrContainer) {
-            console.error('Elemento QR Code não encontrado');
-            return;
-        }
-        
-        // Mostrar indicador de carregamento
-        qrContainer.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
-        // Atualizar status
+        // Atualizar o status da UI para "connecting"
         if (updateStatusUIFunction) {
+            connectionStatus = 'connecting';
             updateStatusUIFunction('connecting', 'Gerando QR Code...');
         }
         
-        // Solicitar QR Code da API
-        const options = {
+        console.log('Iniciando sessão para gerar QR Code...');
+        
+        // Fazer a requisição para iniciar a sessão e obter o QR Code
+        const url = `${API_URL}/whatsapp/start-session`;
+        console.log('Solicitando QR Code em:', url);
+        
+        const response = await fetch(url, {
             method: 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify({
-                webhook: null,
-                waitQrCode: true
-            })
-        };
-        
-        console.log(`Iniciando sessão: ${API_URL}/adm/start-session`);
-        
-        const response = await fetch(`${API_URL}/adm/start-session`, options);
+            headers: getHeaders()
+        });
         
         if (!response.ok) {
-            throw new Error(`Erro ao iniciar sessão: ${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            console.error(`Erro ao obter QR Code: ${response.status} ${response.statusText}`);
+            console.error(`Detalhes: ${errorText}`);
+            
+            if (updateStatusUIFunction) {
+                updateStatusUIFunction('error', 'Erro ao gerar QR');
+            }
+            
+            showNotification('error', 'Erro ao gerar QR Code', 'Tente novamente mais tarde');
+            return;
         }
         
         const data = await response.json();
-        console.log('QR Code recebido:', data);
+        console.log('Resposta da API (QR Code):', data);
         
-        // Verificar se a sessão já está conectada
-        if (data.status === 'CONNECTED') {
-            // Se já estiver conectado, atualizar a interface
-            connectionStatus = 'connected';
+        if (data && data.qrcode) {
+            // Atualizar o QR Code na UI
+            const qrCodeElement = document.getElementById('qrcode');
+            if (qrCodeElement) {
+                qrCodeElement.innerHTML = ''; // Limpar conteúdo anterior
+                
+                // Criar uma imagem para o QR Code
+                const qrImage = document.createElement('img');
+                qrImage.src = data.qrcode;
+                qrImage.alt = 'QR Code para WhatsApp';
+                qrImage.classList.add('qrcode-img');
+                
+                qrCodeElement.appendChild(qrImage);
+                
+                // Atualizar instruções
+                const instructionsElement = document.getElementById('qrInstructions');
+                if (instructionsElement) {
+                    instructionsElement.textContent = 'Escaneie o QR Code com seu WhatsApp para conectar';
+                }
+            }
             
+            // Atualizar o status
             if (updateStatusUIFunction) {
-                updateStatusUIFunction('connected', 'Conectado');
+                updateStatusUIFunction('qrReady', 'QR Code pronto');
             }
             
-            // Iniciar verificação periódica do status
-            if (!qrCodeInterval) {
-                qrCodeInterval = setInterval(updateConnectionStatus, 3000);
-            }
-            
-            showNotification('success', 'WhatsApp Conectado', 'Seu WhatsApp já está conectado');
-            return;
-        }
-        
-        if (!data || !data.qrcode) {
-            throw new Error('QR Code não recebido do servidor');
-        }
-        
-        // Exibir QR Code - tentativa direta usando HTML e CSS inline
-        let qrSource = '';
-        
-        // Tentar extrair a string base64 independente do formato
-        if (typeof data.qrcode === 'string') {
-            qrSource = data.qrcode.startsWith('data:') 
-                ? data.qrcode 
-                : 'data:image/png;base64,' + data.qrcode;
-        } else if (typeof data.qrcode === 'object' && data.qrcode !== null) {
-            if (data.qrcode.base64Qr) {
-                qrSource = 'data:image/png;base64,' + data.qrcode.base64Qr;
-            } else if (data.qrcode.qrcode && typeof data.qrcode.qrcode === 'string') {
-                qrSource = data.qrcode.qrcode.startsWith('data:') 
-                    ? data.qrcode.qrcode 
-                    : 'data:image/png;base64,' + data.qrcode.qrcode;
-            } else {
-                throw new Error('Formato de QR Code não reconhecido');
-            }
+            // Configurar verificação periódica do status
+            clearInterval(qrCodeInterval);
+            qrCodeInterval = setInterval(updateConnectionStatus, 5000);
         } else {
-            throw new Error('Formato de QR Code não suportado');
+            console.error('QR Code não encontrado na resposta', data);
+            if (updateStatusUIFunction) {
+                updateStatusUIFunction('error', 'QR Code inválido');
+            }
         }
-        
-        // Adicionar QR Code diretamente como atributo background-image
-        qrContainer.innerHTML = '';
-        qrContainer.style.backgroundImage = `url(${qrSource})`;
-        qrContainer.style.backgroundSize = 'contain';
-        qrContainer.style.backgroundPosition = 'center';
-        qrContainer.style.backgroundRepeat = 'no-repeat';
-        
-        // Atualizar status
-        if (updateStatusUIFunction) {
-            updateStatusUIFunction('connecting', 'Escaneie o QR Code');
-        }
-        
-        // Iniciar verificação periódica do status
-        if (!qrCodeInterval) {
-            qrCodeInterval = setInterval(updateConnectionStatus, 3000);
-        }
-        
-        // Notificar usuário
-        showNotification('success', 'QR Code Gerado', 'Escaneie o QR Code com seu WhatsApp');
-        
     } catch (error) {
         console.error('Erro ao buscar QR Code:', error);
-        
-        const qrContainer = document.getElementById('qrcode');
-        if (qrContainer) {
-            qrContainer.innerHTML = '<div class="qr-error"><i class="fas fa-exclamation-triangle"></i><p>Erro ao gerar QR Code</p></div>';
-        }
-        
-        // Atualizar status
         if (updateStatusUIFunction) {
-            updateStatusUIFunction('disconnected', 'Erro ao gerar QR Code');
+            updateStatusUIFunction('error', 'Erro ao gerar QR');
         }
         
-        // Notificar usuário
-        showNotification('error', 'Erro', error.message || 'Erro ao gerar QR Code');
+        showNotification('error', 'Erro', 'Não foi possível conectar à API do WhatsApp');
     }
 }
 
-// Inicializar QR Code e gerenciamento de conexão
+// Inicializar a página de QR Code
 function initQRCode() {
-    console.log("Inicializando QR Code...");
+    const qrTab = document.getElementById('qrTab');
     
-    const qrContainer = document.getElementById('qrcode');
-    const connectBtn = document.getElementById('connect-btn');
-    const statusTextElement = document.getElementById('connection-status-text');
-    
-    // Verificar se todos os elementos necessários estão presentes
-    if (!qrContainer || !connectBtn || !statusTextElement) {
-        console.error('Elementos necessários para QR Code não encontrados no DOM:');
-        console.error('qrContainer:', qrContainer);
-        console.error('connectBtn:', connectBtn);
-        console.error('statusTextElement:', statusTextElement);
-        return; // Não prosseguir se os elementos não existirem
+    if (!qrTab) {
+        console.error('Tab de QR Code não encontrada');
+        return;
     }
     
-    // Função para atualizar o status na interface
-    function updateStatusUI(status, message) {
-        console.log(`Atualizando status UI: ${status} - ${message}`);
+    // Botão gerar QR Code
+    const generateQRButton = document.getElementById('generateQR');
+    const disconnectButton = document.getElementById('disconnectWhatsApp');
+    
+    // Função para atualizar a UI com base no status
+    updateStatusUIFunction = function(status, message) {
+        const statusElement = document.getElementById('connectionStatus');
+        const statusIconElement = document.getElementById('connectionStatusIcon');
         
-        // Atualizar o elemento de status se existir
-        if (statusTextElement) {
-            statusTextElement.textContent = message;
-            statusTextElement.className = '';
-            statusTextElement.classList.add(status);
+        if (statusElement) {
+            statusElement.textContent = message;
+            
+            // Remover classes anteriores
+            statusElement.classList.remove('status-connected', 'status-connecting', 'status-disconnected', 'status-error');
+            
+            // Adicionar classe apropriada
+            statusElement.classList.add(`status-${status}`);
         }
         
-        // Status no contêiner da página
-        const statusContainer = document.querySelector('.status-container');
-        if (statusContainer) {
-            statusContainer.textContent = `Status: ${message}`;
-            statusContainer.className = 'status-container';
-            statusContainer.classList.add(`status-${status}`);
+        if (statusIconElement) {
+            // Atualizar ícone
+            statusIconElement.className = ''; // Limpar classes anteriores
+            statusIconElement.classList.add('fas');
+            
+            // Adicionar classe de ícone apropriada
+            switch(status) {
+                case 'connected':
+                    statusIconElement.classList.add('fa-check-circle', 'status-icon-connected');
+                    break;
+                case 'connecting':
+                    statusIconElement.classList.add('fa-spinner', 'fa-spin', 'status-icon-connecting');
+                    break;
+                case 'qrReady':
+                    statusIconElement.classList.add('fa-qrcode', 'status-icon-qrReady');
+                    break;
+                case 'disconnected':
+                    statusIconElement.classList.add('fa-times-circle', 'status-icon-disconnected');
+                    break;
+                case 'error':
+                    statusIconElement.classList.add('fa-exclamation-triangle', 'status-icon-error');
+                    break;
+            }
         }
-        
-        // Atualizar também a aparência do QR code
-        if (status === 'connected') {
-            qrContainer.innerHTML = '<i class="fas fa-check-circle"></i>';
-            connectBtn.innerHTML = '<i class="fas fa-link-slash"></i> Desconectar';
-            connectBtn.setAttribute('data-tooltip', 'Desconectar WhatsApp');
-        } else if (status === 'connecting') {
-            // Não modificar o QR code quando estiver conectando
-        } else if (status === 'disconnected') {
-            qrContainer.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-            connectBtn.innerHTML = '<i class="fas fa-sync"></i> Gerar Novo QR Code';
-            connectBtn.setAttribute('data-tooltip', 'Gerar novo QR Code');
-        }
-    }
+    };
     
-    // Salvar a função para uso global
-    updateStatusUIFunction = updateStatusUI;
-    
-    // Inicializa com status desconectado
-    updateStatusUI('disconnected', 'Desconectado');
-    
-    // Função para desconectar
+    // Função para desconectar do WhatsApp
     async function disconnect() {
-        if (!updateStatusUIFunction) {
-            console.error('updateStatusUIFunction não está definida');
-            showNotification('error', 'Erro interno', 'Erro na inicialização da interface');
-            return;
-        }
-        
         try {
+            console.log('Desconectando do WhatsApp...');
             updateStatusUIFunction('connecting', 'Desconectando...');
             
-            const options = {
+            const url = `${API_URL}/whatsapp/close-session`;
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: getHeaders()
-            };
-            
-            console.log(`Desconectando: ${API_URL}/adm/close-session`);
-            const response = await fetch(`${API_URL}/adm/close-session`, options);
+            });
             
             if (response.ok) {
+                console.log('Desconexão bem-sucedida');
                 connectionStatus = 'disconnected';
                 updateStatusUIFunction('disconnected', 'Desconectado');
+                showNotification('info', 'Desconectado', 'Sessão do WhatsApp encerrada com sucesso');
                 
+                // Limpar o QR Code
+                const qrCodeElement = document.getElementById('qrcode');
+                if (qrCodeElement) {
+                    qrCodeElement.innerHTML = '<div class="qrcode-placeholder">QR Code será gerado aqui</div>';
+                }
+                
+                // Limpar o intervalo de verificação
                 clearInterval(qrCodeInterval);
-                qrCodeInterval = null;
-                
-                showNotification('success', 'Desconectado', 'Seu WhatsApp foi desconectado com sucesso');
             } else {
-                const errorText = await response.text();
-                console.error(`Erro ao desconectar: ${response.status} ${response.statusText}`);
-                console.error(`Detalhes: ${errorText}`);
-                throw new Error(`Erro ao desconectar: ${response.status}`);
+                console.error('Erro ao desconectar');
+                updateStatusUIFunction('error', 'Erro ao desconectar');
+                showNotification('error', 'Erro', 'Não foi possível desconectar do WhatsApp');
             }
         } catch (error) {
             console.error('Erro ao desconectar:', error);
-            showNotification('error', 'Erro', 'Não foi possível desconectar. Tente novamente.');
+            updateStatusUIFunction('error', 'Erro ao desconectar');
+            showNotification('error', 'Erro', 'Ocorreu um erro ao desconectar do WhatsApp');
         }
     }
     
-    // Evento do botão para conectar/desconectar
-    connectBtn.addEventListener('click', () => {
-        if (connectionStatus === 'connected') {
-            disconnect();
-        } else {
-            fetchQRCode();
-        }
-    });
+    // Botão para gerar o QR code
+    if (generateQRButton) {
+        generateQRButton.addEventListener('click', fetchQRCode);
+    }
     
-    // Tentar buscar QR Code ao carregar a página
-    fetchQRCode();
+    // Botão para desconectar
+    if (disconnectButton) {
+        disconnectButton.addEventListener('click', disconnect);
+    }
+    
+    // Verificar o status inicial
+    checkToken().then(() => {
+        updateConnectionStatus();
+    });
 }
 
-// Inicializar botão de novo fluxo
+// Inicializar a página de novos fluxos
 function initNewFlow() {
-    const newFlowBtn = document.querySelector('.new-flow-btn');
-    if (!newFlowBtn) {
-        console.log('Botão de novo fluxo não encontrado, pulando inicialização');
+    const newFlowTab = document.getElementById('newFlowTab');
+    
+    if (!newFlowTab) {
+        console.error('Tab de novo fluxo não encontrada');
         return;
     }
     
-    // O botão já tem seu evento no initModalNovoFluxo
-    console.log('Botão de novo fluxo inicializado');
+    // Código de inicialização do editor de fluxos
+    console.log('Inicializando editor de fluxos');
+    
+    // Aqui você pode adicionar o código para inicializar o fluxograma
 }
 
-// Inicializar configurações
+// Inicializar a página de configurações
 function initSettings() {
-    const settingsInputs = document.querySelectorAll('.setting-item input, .setting-item textarea');
-    if (!settingsInputs || settingsInputs.length === 0) {
-        console.log('Elementos de configurações não encontrados, pulando inicialização');
+    const settingsTab = document.getElementById('settingsTab');
+    
+    if (!settingsTab) {
+        console.error('Tab de configurações não encontrada');
         return;
     }
     
-    settingsInputs.forEach(input => {
-        input.addEventListener('change', () => {
-            // Aqui será implementada a lógica para salvar as configurações
-            showNotification('success', 'Configurações Salvas', 'Suas configurações foram salvas com sucesso!');
+    // Código de inicialização das configurações
+    console.log('Inicializando configurações');
+    
+    const saveSettingsButton = document.getElementById('saveSettings');
+    if (saveSettingsButton) {
+        saveSettingsButton.addEventListener('click', () => {
+            showNotification('success', 'Configurações salvas', 'Suas configurações foram salvas com sucesso');
         });
-    });
+    }
 }
 
-// Função para enviar mensagem via API
+// Função para enviar mensagem
 async function sendMessage(number, message) {
     try {
-        const options = {
-            method: 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify({ 
-                phone: number, 
-                message: message,
-                isGroup: false
-            })
-        };
+        // Validar número de telefone
+        if (!number || number.trim() === '') {
+            showNotification('error', 'Erro', 'Número de telefone é obrigatório');
+            return false;
+        }
         
-        console.log(`Enviando mensagem para ${number}: ${API_URL}/${session}/send-message`);
-        const response = await fetch(`${API_URL}/${session}/send-message`, options);
+        // Validar mensagem
+        if (!message || message.trim() === '') {
+            showNotification('error', 'Erro', 'Mensagem é obrigatória');
+            return false;
+        }
         
-        if (response.ok) {
-            const data = await response.json();
-            console.log('Mensagem enviada com sucesso:', data);
-            showNotification('success', 'Mensagem Enviada', `Mensagem enviada para ${number}`);
-            return data;
+        // Preparar número (remover caracteres não numéricos)
+        const cleanNumber = number.replace(/\D/g, '');
+        
+        console.log(`Enviando mensagem para ${cleanNumber}: ${message}`);
+        
+        // Fazer a requisição para a API
+        const response = await apiRequest('send-message', 'POST', { 
+            phone: cleanNumber, 
+            message: message 
+        });
+        
+        const data = await response.json();
+        console.log('Resposta do envio:', data);
+        
+        if (data && data.status === 'SENT') {
+            showNotification('success', 'Mensagem enviada', `Mensagem enviada com sucesso para ${number}`);
+            saveLastMessage(number, message);
+            return true;
         } else {
-            const errorText = await response.text();
-            console.error(`Erro ao enviar mensagem: ${response.status} ${response.statusText}`);
-            console.error(`Detalhes: ${errorText}`);
-            showNotification('error', 'Erro', `Falha ao enviar mensagem: ${response.status}`);
-            throw new Error(`Erro ao enviar mensagem: ${response.status}`);
+            showNotification('error', 'Erro', 'Não foi possível enviar a mensagem');
+            return false;
         }
     } catch (error) {
         console.error('Erro ao enviar mensagem:', error);
-        showNotification('error', 'Erro', 'Não foi possível enviar a mensagem');
-        throw error;
+        showNotification('error', 'Erro', 'Ocorreu um erro ao enviar a mensagem');
+        return false;
     }
 }
 
-// Modal Novo Fluxo - Removido para evitar duplicação com fluxos.js
-
-// Funções de fluxos foram movidas para fluxos.js
-
-// Verificar e atualizar token
+// Verificar e gerar token se necessário
 async function checkToken() {
-    console.log('Verificando token...');
-    try {
-        // Verificar se já temos um token salvo
-        const savedToken = localStorage.getItem('wpp_session_token');
-        if (savedToken) {
-            console.log('Token encontrado no localStorage');
-            sessionToken = savedToken;
-            
-            // Testar se o token ainda é válido
-            const response = await fetch(`${API_URL}/adm/status-session`, {
+    // Verificar se já temos um token salvo
+    const savedToken = localStorage.getItem('wpp_session_token');
+    
+    if (savedToken) {
+        console.log('Token encontrado no localStorage');
+        sessionToken = savedToken;
+        
+        // Testar o token com uma requisição simples
+        try {
+            const response = await fetch(`${API_URL}/whatsapp/status-session`, {
                 method: 'GET',
-                headers: { 'Authorization': `Bearer ${sessionToken}` }
+                headers: getHeaders()
             });
             
             if (response.ok) {
                 console.log('Token válido');
-            return true;
+                return true;
             } else {
-                console.log('Token expirado ou inválido');
-                // Gerar novo token
+                console.log('Token inválido ou expirado. Gerando um novo...');
+                // Token inválido, tentar gerar um novo
                 return await generateSessionToken();
             }
-        } else {
-            console.log('Nenhum token encontrado, gerando novo token');
+        } catch (error) {
+            console.error('Erro ao verificar token:', error);
+            // Em caso de erro, tentar gerar um novo token
             return await generateSessionToken();
         }
-    } catch (error) {
-        console.error('Erro ao verificar token:', error);
-        showNotification('error', 'Erro de autenticação', 'Não foi possível verificar o token de acesso');
-        return false;
+    } else {
+        console.log('Token não encontrado. Gerando um novo...');
+        // Não temos token salvo, gerar um novo
+        return await generateSessionToken();
     }
 }
 
 // Inicializar botão de envio de mensagem
 function initSendMessageButton() {
-    const sendButton = document.getElementById('send-test-message');
-    const numberInput = document.getElementById('test-number');
-    const messageInput = document.getElementById('test-message');
-    const statusElement = document.getElementById('message-status');
+    const messageTab = document.getElementById('messageTab');
     
-    if (!sendButton || !numberInput || !messageInput || !statusElement) {
-        console.log('Elementos de envio de mensagem não encontrados, pulando inicialização');
+    if (!messageTab) {
+        console.error('Tab de mensagens não encontrada');
         return;
     }
     
-    sendButton.addEventListener('click', async () => {
-        try {
-            const number = numberInput.value.trim();
-            const message = messageInput.value.trim();
+    const sendMessageForm = document.getElementById('sendMessageForm');
+    const phoneNumberInput = document.getElementById('phoneNumber');
+    const messageTextarea = document.getElementById('messageText');
+    
+    // Carregar última mensagem enviada
+    const lastMessageNumber = localStorage.getItem('lastMessageNumber');
+    const lastMessageText = localStorage.getItem('lastMessageText');
+    
+    if (lastMessageNumber && phoneNumberInput) {
+        phoneNumberInput.value = lastMessageNumber;
+    }
+    
+    if (lastMessageText && messageTextarea) {
+        messageTextarea.value = lastMessageText;
+    }
+    
+    if (sendMessageForm) {
+        sendMessageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            if (!number || !message) {
-                statusElement.textContent = 'Preencha todos os campos';
-                statusElement.className = 'error';
+            // Verificar conexão antes de enviar
+            if (connectionStatus !== 'connected') {
+                showNotification('error', 'Não conectado', 'Você precisa estar conectado ao WhatsApp para enviar mensagens');
                 return;
             }
             
-            statusElement.textContent = 'Enviando mensagem...';
-            statusElement.className = 'sending';
+            const number = phoneNumberInput.value;
+            const message = messageTextarea.value;
             
-            await sendMessage(number, message);
+            const success = await sendMessage(number, message);
             
-            statusElement.textContent = 'Mensagem enviada com sucesso!';
-            statusElement.className = 'success';
-        } catch (error) {
-            console.error('Erro ao enviar mensagem:', error);
-            statusElement.textContent = 'Erro ao enviar mensagem. Tente novamente.';
-            statusElement.className = 'error';
-        }
-    });
-}
-
-// Inicializar todas as funcionalidades
-async function init() {
-    console.log('Inicializando dashboard...');
-    
-    try {
-    // Verificar autenticação do usuário
-    checkAuth();
-    
-    // Inicializar navegação
-    initNavigation();
-    
-        // Inicializar logout
-        initLogout();
-    
-        // Atualizar informações do usuário
-        updateUserInfo();
-        
-        // Verificar e atualizar token
-        await checkToken();
-        
-        // Inicializar QR Code
-        initQRCode();
-        
-        // Não inicializamos aqui o modal de novo fluxo para evitar duplicação com fluxos.js
-        // initModalNovoFluxo();
-        
-        // Inicializar botão de envio de mensagem
-        initSendMessageButton();
-        
-        // Remover overlay de carregamento
-        const loadingOverlay = document.querySelector('.loading-overlay');
-        if (loadingOverlay) {
-            loadingOverlay.style.display = 'none';
-        }
-        
-        console.log('Dashboard inicializado com sucesso');
-    } catch (error) {
-        console.error('Erro ao inicializar dashboard:', error);
-        showNotification('error', 'Erro de inicialização', 'Ocorreu um erro ao inicializar o dashboard');
+            if (success) {
+                // Limpar formulário após envio bem-sucedido
+                messageTextarea.value = '';
+            }
+        });
     }
 }
 
-// Iniciar quando o DOM estiver carregado
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM carregado, iniciando aplicação');
-    init().catch(error => {
-        console.error('Erro ao inicializar aplicação:', error);
-        showNotification('error', 'Erro de inicialização', 'Não foi possível inicializar a aplicação corretamente');
-    });
-}); 
+// Função principal de inicialização
+async function init() {
+    // Verificar autenticação
+    checkAuth();
+    
+    // Inicializar todos os componentes da UI
+    initNavigation();
+    initLogout();
+    updateUserInfo();
+    
+    // Inicializar os componentes das abas
+    initQRCode();
+    initNewFlow();
+    initSettings();
+    initSendMessageButton();
+    
+    // Adicionar evento para chamar função fluxograma.js quando em aba específica
+    const fluxosLink = document.querySelector('[data-page="fluxosTab"]');
+    if (fluxosLink) {
+        fluxosLink.addEventListener('click', () => {
+            // Se temos a função de inicialização do fluxograma disponível, chamá-la
+            if (typeof initFluxograma === 'function') {
+                setTimeout(initFluxograma, 100);
+            }
+        });
+    }
+    
+    console.log('App inicializado com sucesso!');
+}
+
+// Inicializar quando o documento estiver carregado
+document.addEventListener('DOMContentLoaded', init); 
