@@ -3,15 +3,22 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Servir arquivos estáticos
+// Configuração de middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, './')));
 
-// Redirecionar para a página inicial
+// Importação das rotas da API
+const whatsappRoutes = require('./api/routes/whatsapp');
+
+// Usar as rotas
+app.use('/api/whatsapp', whatsappRoutes);
+
+// Rotas para páginas HTML
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Redirecionar todas as outras rotas para o dashboard
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'pages/dashboard.html'));
 });
