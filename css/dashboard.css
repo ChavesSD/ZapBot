@@ -925,4 +925,441 @@ body {
     font-size: 14px;
     text-align: center;
     max-width: 80%;
+}
+
+/* Estilos para o modal de fluxos avançado */
+.opcao-container {
+    background-color: var(--secondary-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.opcao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.opcao-header h4 {
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.form-info {
+    background-color: rgba(52, 152, 219, 0.1);
+    border-left: 4px solid var(--info-color);
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.form-info p {
+    color: #333;
+    font-size: 14px;
+    margin: 0;
+}
+
+.form-info i {
+    color: var(--info-color);
+    margin-right: 5px;
+}
+
+.remove-opcao,
+.remove-subfluxo {
+    background-color: rgba(231, 76, 60, 0.1);
+    border: none;
+    color: var(--error-color);
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.remove-opcao:hover,
+.remove-subfluxo:hover {
+    background-color: var(--error-color);
+    color: white;
+}
+
+#addOpcao, 
+.add-subfluxo {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    cursor: pointer;
+    margin: 10px 0 20px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+#addOpcao:hover,
+.add-subfluxo:hover {
+    background-color: var(--primary-hover);
+}
+
+.subfluxo-container {
+    margin-top: 15px;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.toggle-label input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.subfluxo-opcoes {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    border: 1px dashed var(--primary-color);
+}
+
+.subfluxo-opcoes h5 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.subfluxo-item {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.add-subfluxo {
+    background-color: var(--info-color);
+    font-size: 13px;
+    padding: 8px 12px;
+}
+
+.add-subfluxo:hover {
+    background-color: #2980b9;
+}
+
+.opcao-texto,
+.opcao-resposta,
+.subfluxo-texto,
+.subfluxo-resposta {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.opcao-resposta,
+.subfluxo-resposta {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Estilos para a lista de fluxos */
+.fluxos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.fluxo-card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.fluxo-card:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.fluxo-card-header {
+    padding: 15px;
+    background-color: var(--secondary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.fluxo-card-header h3 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.fluxo-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-fluxo,
+.delete-fluxo {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.edit-fluxo {
+    color: var(--info-color);
+}
+
+.delete-fluxo {
+    color: var(--error-color);
+}
+
+.edit-fluxo:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.delete-fluxo:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.fluxo-preview {
+    padding: 15px;
+}
+
+.fluxo-preview p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Estilos para o Editor de Fluxograma */
+.fluxograma-container {
+    display: flex;
+    flex-direction: column;
+    height: 70vh;
+    margin-top: 20px;
+    width: 100%;
+    position: relative;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.fluxograma-editor {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    position: relative;
+}
+
+.fluxograma-controls {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-top: 1px solid #ddd;
+    gap: 10px;
+}
+
+.fluxograma-control-button {
+    padding: 8px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+
+.fluxograma-control-button:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+.fluxograma-control-button i {
+    font-size: 16px;
+}
+
+/* Estilo para as linhas/conexões */
+.flow-edge {
+    stroke: #999;
+    stroke-width: 2px;
+    stroke-opacity: 0.6;
+    transition: stroke-width 0.2s, stroke-opacity 0.2s;
+}
+
+.flow-edge:hover {
+    stroke-width: 4px;
+    stroke-opacity: 1;
+}
+
+/* Estilo para os nós */
+.flow-node {
+    fill: #fff;
+    stroke-width: 2px;
+    transition: all 0.2s;
+    filter: drop-shadow(0px 3px 3px rgba(0, 0, 0, 0.2));
+}
+
+.flow-node-inicio {
+    stroke: #4285F4;
+    fill: #E8F0FE;
+}
+
+.flow-node-opcao {
+    stroke: #34A853;
+    fill: #E6F4EA;
+}
+
+.node:hover .flow-node {
+    stroke-width: 3px;
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
+.node-title {
+    font-size: 14px;
+    font-weight: bold;
+    fill: #333;
+    pointer-events: none;
+}
+
+.node-content {
+    font-size: 12px;
+    fill: #666;
+    pointer-events: none;
+}
+
+/* Aumentar tamanho do modal para o fluxograma */
+.modal-content {
+    max-width: 90vw;
+    width: 90vw;
+    max-height: 90vh;
+}
+
+/* Adaptações para o modal de edição de nó */
+.node-edit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.node-edit-modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.node-edit-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.node-edit-modal-title {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.node-edit-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #777;
+}
+
+.node-edit-form {
+    padding: 20px;
+}
+
+.node-edit-form-group {
+    margin-bottom: 15px;
+}
+
+.node-edit-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.node-edit-form-group input,
+.node-edit-form-group select,
+.node-edit-form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.node-edit-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.node-edit-cancel-btn {
+    padding: 8px 15px;
+    background-color: #f2f2f2;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.node-edit-save-btn {
+    padding: 8px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Cursor de movimento quando estiver arrastando o SVG */
+.fluxograma-svg {
+    cursor: grab;
+}
+
+.fluxograma-svg:active {
+    cursor: grabbing;
 } 

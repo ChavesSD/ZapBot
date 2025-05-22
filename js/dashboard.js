@@ -54,7 +54,7 @@ function updateUserInfo() {
 }
 
 // Configuração da API
-const API_URL = 'http://localhost:21465/api';
+const API_URL = 'https://zapapi.zapbot.com.br/api';
 // Variável global para armazenar a sessão
 let session = 'adm'; // Usamos o mesmo nome da sessão que aparece no e-mail (adm@zapbot.com)
 // Token de autenticação para o WPPConnect
@@ -79,15 +79,13 @@ async function updateConnectionStatus() {
     }
     
     try {
-        updateStatusUIFunction('connecting', 'Verificando status...');
-        
-        const options = {
+        // Não alterar o status para "connecting" durante verificação
+        // para evitar sobrescrever o status "connected" ou "disconnected"
+        console.log(`Verificando status: ${API_URL}/adm/status-session`);
+        const response = await fetch(`${API_URL}/adm/status-session`, {
             method: 'GET',
             headers: getHeaders()
-        };
-        
-        console.log(`Verificando status: ${API_URL}/${session}/status-session`);
-        const response = await fetch(`${API_URL}/${session}/status-session`, options);
+        });
                 
         if (response.ok) {
             const data = await response.json();
@@ -111,7 +109,7 @@ async function updateConnectionStatus() {
             }
         } else {
             console.error(`Erro ao verificar status: ${response.status} ${response.statusText}`);
-            updateStatusUIFunction('disconnected', 'Erro de conexão');
+            // Não alterar o status da UI em caso de erro temporário
             
             // Se o erro for 401 (não autorizado), talvez precisemos gerar um novo token
             if (response.status === 401) {
@@ -121,7 +119,7 @@ async function updateConnectionStatus() {
         }
     } catch (error) {
         console.error('Erro ao verificar status:', error);
-        updateStatusUIFunction('disconnected', 'Erro de conexão');
+        // Não alterar o status da UI em caso de erro temporário
     }
 }
 
@@ -146,8 +144,8 @@ function getHeaders(contentType = 'application/json') {
 // Função para gerar um token específico para a sessão
 async function generateSessionToken() {
     try {
-        const url = `${API_URL}/${session}/${API_TOKEN}/generate-token`;
-        console.log(`Gerando token para sessão ${session}: ${url}`);
+        const url = `${API_URL}/adm/${API_TOKEN}/generate-token`;
+        console.log(`Gerando token para sessão adm: ${url}`);
         
         const response = await fetch(url, { method: 'POST' });
         
@@ -179,8 +177,8 @@ async function generateSessionToken() {
 // Função para fazer requisições autenticadas
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
-        // O formato correto da URL é /api/:session/endpoint
-        const url = `${API_URL}/${session}/${endpoint}`;
+        // O formato correto da URL é /api/adm/endpoint
+        const url = `${API_URL}/adm/${endpoint}`;
         console.log(`Fazendo requisição para: ${url}`);
         
         const options = {
@@ -325,9 +323,9 @@ async function fetchQRCode() {
             })
         };
         
-        console.log(`Iniciando sessão: ${API_URL}/${session}/start-session`);
+        console.log(`Iniciando sessão: ${API_URL}/adm/start-session`);
         
-        const response = await fetch(`${API_URL}/${session}/start-session`, options);
+        const response = await fetch(`${API_URL}/adm/start-session`, options);
         
         if (!response.ok) {
             throw new Error(`Erro ao iniciar sessão: ${response.status} ${response.statusText}`);
@@ -335,6 +333,24 @@ async function fetchQRCode() {
         
         const data = await response.json();
         console.log('QR Code recebido:', data);
+        
+        // Verificar se a sessão já está conectada
+        if (data.status === 'CONNECTED') {
+            // Se já estiver conectado, atualizar a interface
+            connectionStatus = 'connected';
+            
+            if (updateStatusUIFunction) {
+                updateStatusUIFunction('connected', 'Conectado');
+            }
+            
+            // Iniciar verificação periódica do status
+            if (!qrCodeInterval) {
+                qrCodeInterval = setInterval(updateConnectionStatus, 3000);
+            }
+            
+            showNotification('success', 'WhatsApp Conectado', 'Seu WhatsApp já está conectado');
+            return;
+        }
         
         if (!data || !data.qrcode) {
             throw new Error('QR Code não recebido do servidor');
@@ -472,8 +488,8 @@ function initQRCode() {
                 headers: getHeaders()
             };
             
-            console.log(`Desconectando: ${API_URL}/${session}/close-session`);
-            const response = await fetch(`${API_URL}/${session}/close-session`, options);
+            console.log(`Desconectando: ${API_URL}/adm/close-session`);
+            const response = await fetch(`${API_URL}/adm/close-session`, options);
             
             if (response.ok) {
                 connectionStatus = 'disconnected';
@@ -571,114 +587,41 @@ async function sendMessage(number, message) {
     }
 }
 
-// Modal Novo Fluxo
-function initModalNovoFluxo() {
-    const modal = document.getElementById('modalNovoFluxo');
-    if (!modal) {
-        console.log('Modal Novo Fluxo não encontrado, pulando inicialização');
-        return;
-    }
-    
-    const openBtn = document.querySelector('.new-flow-btn');
-    const closeBtn = modal.querySelector('.close');  // Corrigido para usar querySelector no modal
-    const cancelBtn = modal.querySelector('.cancel');  // Corrigido para usar querySelector no modal
-    const addPerguntaRespostaBtn = document.getElementById('addPerguntaResposta');
-    const perguntasRespostasContainer = document.getElementById('perguntasRespostasContainer');
-    const form = document.getElementById('formNovoFluxo');
+// Modal Novo Fluxo - Removido para evitar duplicação com fluxos.js
 
-    // Verificar se todos os elementos necessários estão presentes
-    if (!openBtn || !closeBtn || !cancelBtn || !addPerguntaRespostaBtn || !perguntasRespostasContainer || !form) {
-        console.error('Elementos necessários para Modal Novo Fluxo não encontrados no DOM:');
-        console.error('openBtn:', openBtn);
-        console.error('closeBtn:', closeBtn);
-        console.error('cancelBtn:', cancelBtn);
-        console.error('addPerguntaRespostaBtn:', addPerguntaRespostaBtn);
-        console.error('perguntasRespostasContainer:', perguntasRespostasContainer);
-        console.error('form:', form);
-        return;
-    }
+// Funções de fluxos foram movidas para fluxos.js
 
-    // Abrir modal
-    openBtn.addEventListener('click', () => {
-        modal.style.display = 'block';
-    });
-    
-    // Fechar modal
-    closeBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-        form.reset();
-        perguntasRespostasContainer.innerHTML = `<div class="pergunta-resposta">
-            <input type="text" class="pergunta" placeholder="Pergunta" required>
-            <input type="text" class="resposta" placeholder="Resposta" required>
-        </div>`;
-    });
-    
-    cancelBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-        form.reset();
-        perguntasRespostasContainer.innerHTML = `<div class="pergunta-resposta">
-            <input type="text" class="pergunta" placeholder="Pergunta" required>
-            <input type="text" class="resposta" placeholder="Resposta" required>
-        </div>`;
-    });
-    
-    // Adicionar nova pergunta/resposta
-    addPerguntaRespostaBtn.addEventListener('click', () => {
-        const div = document.createElement('div');
-        div.className = 'pergunta-resposta';
-        div.innerHTML = `<input type="text" class="pergunta" placeholder="Pergunta" required>
-            <input type="text" class="resposta" placeholder="Resposta" required>
-            <button type="button" class="remove-pergunta">Remover</button>`;
-        perguntasRespostasContainer.appendChild(div);
-        // Remover pergunta/resposta
-        div.querySelector('.remove-pergunta').addEventListener('click', () => {
-            div.remove();
-        });
-    });
-    
-    // Submeter novo fluxo
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const nomeFluxo = document.getElementById('nomeFluxo').value;
-        const perguntas = Array.from(perguntasRespostasContainer.querySelectorAll('.pergunta')).map(input => input.value);
-        const respostas = Array.from(perguntasRespostasContainer.querySelectorAll('.resposta')).map(input => input.value);
-        const fluxo = perguntas.map((pergunta, i) => ({ pergunta, resposta: respostas[i] }));
-        // Aqui você pode salvar o fluxo no localStorage, backend, etc.
-        console.log('Fluxo salvo:', { nomeFluxo, fluxo });
-        showNotification('success', 'Fluxo Salvo', 'Seu fluxo de conversa foi salvo com sucesso!');
-        modal.style.display = 'none';
-        form.reset();
-        perguntasRespostasContainer.innerHTML = `<div class="pergunta-resposta">
-            <input type="text" class="pergunta" placeholder="Pergunta" required>
-            <input type="text" class="resposta" placeholder="Resposta" required>
-        </div>`;
-    });
-}
-
-// Verificar se o token é válido
+// Verificar e atualizar token
 async function checkToken() {
+    console.log('Verificando token...');
     try {
-        // Primeiro, tentar ler o token do localStorage
+        // Verificar se já temos um token salvo
         const savedToken = localStorage.getItem('wpp_session_token');
         if (savedToken) {
             console.log('Token encontrado no localStorage');
             sessionToken = savedToken;
+            
+            // Testar se o token ainda é válido
+            const response = await fetch(`${API_URL}/adm/status-session`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${sessionToken}` }
+            });
+            
+            if (response.ok) {
+                console.log('Token válido');
             return true;
-        }
-        
-        // Se não encontrar token, tentar gerar um novo
-        console.log('Gerando novo token para a sessão');
-        const tokenGenerated = await generateSessionToken();
-        if (tokenGenerated) {
-            return true;
+            } else {
+                console.log('Token expirado ou inválido');
+                // Gerar novo token
+                return await generateSessionToken();
+            }
         } else {
-            console.error('Não foi possível gerar um token válido');
-            showNotification('error', 'Erro de Autenticação', 'Não foi possível autenticar-se com o servidor');
-            return false;
+            console.log('Nenhum token encontrado, gerando novo token');
+            return await generateSessionToken();
         }
     } catch (error) {
         console.error('Erro ao verificar token:', error);
-        showNotification('error', 'Erro de Conexão', 'Não foi possível conectar ao servidor para verificar o token.');
+        showNotification('error', 'Erro de autenticação', 'Não foi possível verificar o token de acesso');
         return false;
     }
 }
@@ -723,149 +666,44 @@ function initSendMessageButton() {
 
 // Inicializar todas as funcionalidades
 async function init() {
-    console.log("Inicializando aplicação...");
+    console.log('Inicializando dashboard...');
     
-    // Verificar se estamos na página de dashboard
-    if (!document.querySelector('.sidebar')) {
-        console.log('Não estamos na página de dashboard, pulando inicialização.');
-        return;
-    }
-    
+    try {
     // Verificar autenticação do usuário
     checkAuth();
     
     // Inicializar navegação
     initNavigation();
     
-    // Verificar se o botão de logout existe antes de inicializar
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
+        // Inicializar logout
         initLogout();
-    } else {
-        console.error('Botão de logout não encontrado');
-    }
     
-    // Verificar se o userEmail existe antes de atualizar
-    const userEmail = document.getElementById('userEmail');
-    if (userEmail) {
+        // Atualizar informações do usuário
         updateUserInfo();
-    } else {
-        console.error('userEmail não encontrado');
-    }
-    
-    // Usar 'adm' como sessão fixa para evitar problemas
-    session = 'adm';
-    console.log('Usando sessão fixa:', session);
-    
-    // Verificar token antes de inicializar módulos que dependem da API
-    const tokenValid = await checkToken();
-    if (!tokenValid) {
-        showNotification('error', 'Erro de API', 'Não foi possível validar o token. O QR Code não estará disponível.');
-    }
-    
-    // Inicializar módulos da aplicação - cheque se os elementos existem
-    if (document.querySelector('.qr-code')) {
+        
+        // Verificar e atualizar token
+        await checkToken();
+        
+        // Inicializar QR Code
         initQRCode();
-    } else {
-        console.log('Elemento QR Code não encontrado, pulando inicialização.');
-    }
-    
-    if (document.querySelector('.new-flow-btn')) {
-        initNewFlow();
-    }
-    
-    if (document.querySelector('.setting-item')) {
-        initSettings();
-    }
-    
-    if (document.getElementById('modalNovoFluxo')) {
-        initModalNovoFluxo();
-    }
-    
-    // Inicializar botão de envio de mensagem de teste
-    initSendMessageButton();
-    
-    // Disponibilizar funções globalmente
-    window.sendWhatsAppMessage = sendMessage;
-    
-    // Função especial para testar a exibição de QR Code diretamente
-    window.testQRCode = function() {
-        // QR Code de exemplo (uma imagem pequena em base64)
-        const testQrCode = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA30lEQVRoge2ZMQ6CQBBFn8baA3gUj0JtLT2JNpbewcIjeGprY2o3ycZiBggJzP5/yRSEeS+zu0MgiqIoiqIoiqIoyjiJHnXm3glYAxvg5JzbBVUVRETiTUS+9olKRFnHmiG0PLzARxP5C8YdKxmwB+bOuUdr4dnw9ZVIgeLIKYiRplmAFZDmcT2UmCFDlL5Dq9pIBtzD60qU7exn12oF3IA5sAvrrx8ZUfo+HvMrlZLJBnSSUeaOK6NUyGRB+skoK8bTuVqiRA0Z+svm7n3+NcMWWHoXKYqiKIqiKIryfzwBUss8kilwVikAAAAASUVORK5CYII=';
         
-        console.log('Testando exibição direta de QR Code...');
+        // Não inicializamos aqui o modal de novo fluxo para evitar duplicação com fluxos.js
+        // initModalNovoFluxo();
         
-        const qrContainer = document.querySelector('.qr-code');
-        if (!qrContainer) {
-            console.error('Elemento QR code não encontrado');
-            return;
+        // Inicializar botão de envio de mensagem
+        initSendMessageButton();
+        
+        // Remover overlay de carregamento
+        const loadingOverlay = document.querySelector('.loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
         }
         
-        // Limpar container
-        qrContainer.innerHTML = '';
-        
-        // Criar elemento de imagem
-        const img = document.createElement('img');
-        
-        // Configurar atributos e estilo
-        img.alt = 'QR Code de Teste';
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.position = 'absolute';
-        img.style.top = '0';
-        img.style.left = '0';
-        img.style.objectFit = 'contain';
-        
-        // Evento de carregamento
-        img.addEventListener('load', function() {
-            console.log('QR Code de teste carregado com sucesso');
-        });
-        
-        // Evento de erro
-        img.addEventListener('error', function(e) {
-            console.error('Erro ao carregar QR Code de teste', e);
-        });
-        
-        // Definir a fonte da imagem
-        img.src = testQrCode;
-        
-        // Adicionar ao DOM
-        qrContainer.appendChild(img);
-        
-        return 'Teste de QR Code iniciado - verifique a tela';
-    };
-    
-    window.debugQRCode = function(base64String) {
-        const qrContainer = document.querySelector('.qr-code');
-        if (!qrContainer) {
-            console.error('Elemento QR Code não encontrado');
-            return;
-        }
-        
-        console.log('Tentando exibir QR Code via Debug');
-        
-        // Limpar container
-        qrContainer.innerHTML = '';
-        
-        // Criar imagem
-        const img = document.createElement('img');
-        img.src = base64String.startsWith('data:image/') 
-            ? base64String 
-            : 'data:image/png;base64,' + base64String;
-            
-        // Aplicar estilos
-        img.style.width = '100%';
-        img.style.height = 'auto';
-        img.style.maxWidth = '250px';
-        img.style.maxHeight = '250px';
-        img.style.display = 'block';
-        img.style.margin = '0 auto';
-        
-        // Adicionar ao DOM
-        qrContainer.appendChild(img);
-        
-        console.log('QR Code adicionado via debug');
-    };
+        console.log('Dashboard inicializado com sucesso');
+    } catch (error) {
+        console.error('Erro ao inicializar dashboard:', error);
+        showNotification('error', 'Erro de inicialização', 'Ocorreu um erro ao inicializar o dashboard');
+    }
 }
 
 // Iniciar quando o DOM estiver carregado
