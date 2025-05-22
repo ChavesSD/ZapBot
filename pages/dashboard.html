@@ -6,6 +6,8 @@
     <title>ZAP Bot - Dashboard</title>
     <link rel="stylesheet" href="../css/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- D3.js para desenhar gráficos -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
     <!-- Loading Overlay -->
@@ -117,7 +119,7 @@
                 <div id="flows" class="page">
                     <h2>Fluxos de Conversação</h2>
                     <div class="flows-container">
-                        <button class="new-flow-btn" data-tooltip="Criar novo fluxo de conversação">
+                        <button class="new-flow-btn" id="btnNovoFluxo" data-tooltip="Criar novo fluxo de conversação">
                             <i class="fas fa-plus"></i>
                             Novo Fluxo
                         </button>
@@ -167,27 +169,68 @@
     <div id="modalNovoFluxo" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Novo Fluxo de Perguntas e Respostas</h2>
-            <form id="formNovoFluxo">
-                <div class="form-group">
-                    <label for="nomeFluxo">Nome do Fluxo:</label>
-                    <input type="text" id="nomeFluxo" name="nomeFluxo" required>
+            <h2>Novo Fluxo de Conversação</h2>
+            <div class="form-group">
+                <label for="nomeFluxo">Nome do Fluxo:</label>
+                <input type="text" id="nomeFluxo" name="nomeFluxo" required>
+            </div>
+            <div class="fluxograma-container">
+                <div id="fluxograma-editor" class="fluxograma-editor"></div>
+                <div class="fluxograma-controls">
+                    <button type="button" id="add-node-inicio" class="fluxograma-control-button">
+                        <i class="fas fa-dot-circle"></i> Nó Central
+                    </button>
+                    <button type="button" id="add-node-opcao" class="fluxograma-control-button">
+                        <i class="fas fa-plus-circle"></i> Adicionar Opção
+                    </button>
+                    <button type="button" id="save-flow" class="fluxograma-control-button">
+                        <i class="fas fa-save"></i> Salvar Fluxo
+                    </button>
                 </div>
-                <div id="perguntasRespostasContainer">
-                    <div class="pergunta-resposta">
-                        <input type="text" class="pergunta" placeholder="Pergunta" required>
-                        <input type="text" class="resposta" placeholder="Resposta" required>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de Nó -->
+    <div id="nodeEditModal" class="node-edit-modal" style="display:none;">
+        <div class="node-edit-modal-content">
+            <div class="node-edit-modal-header">
+                <div class="node-edit-modal-title">Editar Nó</div>
+                <button class="node-edit-modal-close">&times;</button>
+            </div>
+            <div class="node-edit-form">
+                <div class="node-edit-form-group">
+                    <label for="node-edit-tipo">Tipo de Nó:</label>
+                    <select id="node-edit-tipo" disabled>
+                        <option value="inicio">Início</option>
+                        <option value="opcao">Opção</option>
+                        <option value="resposta">Resposta</option>
+                        <option value="fim">Fim</option>
+                    </select>
+                </div>
+                <div class="node-edit-form-group">
+                    <label for="node-edit-texto">Texto:</label>
+                    <input type="text" id="node-edit-texto" placeholder="Digite o texto para este nó">
+                </div>
+                <div id="node-edit-opcoes-container" class="node-edit-form-group" style="display: none;">
+                    <label>Opções:</label>
+                    <div id="node-edit-opcoes-list">
+                        <!-- Opções dinâmicas serão inseridas aqui via JS -->
                     </div>
+                    <button type="button" id="node-edit-add-opcao" class="fluxograma-control-button">
+                        <i class="fas fa-plus"></i> Adicionar Opção
+                    </button>
                 </div>
-                <button type="button" id="addPerguntaResposta">Adicionar Pergunta/Resposta</button>
-                <div class="modal-actions">
-                    <button type="submit" class="save">Salvar Fluxo</button>
-                    <button type="button" class="cancel">Cancelar</button>
+                <div class="node-edit-form-actions">
+                    <button type="button" class="node-edit-cancel-btn">Cancelar</button>
+                    <button type="button" class="node-edit-save-btn">Salvar</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <script src="../js/dashboard.js"></script>
+    <script src="../js/fluxos.js"></script>
+    <script src="../js/fluxograma.js"></script>
 </body>
 </html> 
