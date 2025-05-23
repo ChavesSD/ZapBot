@@ -9,6 +9,13 @@ window.addEventListener('load', function() {
         document.getElementById('password').value = savedPassword;
         rememberCheckbox.checked = true;
     }
+
+    // Verificar se já está autenticado
+    const token = localStorage.getItem('authToken');
+    if (token) {
+        // Se tiver token, redirecionar para dashboard
+        window.location.href = '../pages/dashboard.html';
+    }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -56,31 +63,61 @@ document.addEventListener('DOMContentLoaded', function() {
         const isPasswordValid = validatePassword(passwordInput.value);
 
         if (isEmailValid && isPasswordValid) {
-            // Simular envio do formulário
+            // Mostrar estado de carregamento
             loginButton.classList.add('loading');
             
-            // Simular requisição ao servidor
-            setTimeout(() => {
-                // Aqui você faria a requisição real ao servidor
-                if (emailInput.value === 'adm@zapbot.com' && passwordInput.value === 'adm123') {
-                    // Sempre armazenar o email para identificação do usuário
-                    localStorage.setItem('savedEmail', emailInput.value);
-                    localStorage.setItem('loggedIn', 'true');
-                    
-                    // Salvar a senha apenas se "Lembrar senha" estiver marcado
-                    if (document.getElementById('remember').checked) {
-                        localStorage.setItem('savedPassword', passwordInput.value);
-                    } else {
-                        localStorage.removeItem('savedPassword');
-                    }
-                    
-                    // Redirecionar para o dashboard
-                    window.location.href = '../pages/dashboard.html';
-                } else {
-                    showError('Email ou senha incorretos');
-                    loginButton.classList.remove('loading');
+            // Preparar dados para a requisição
+            const credentials = {
+                email: emailInput.value,
+                password: passwordInput.value
+            };
+            
+            // Fazer a requisição para a API
+            fetch('/api/users/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(credentials)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Erro ao fazer login');
+                    });
                 }
-            }, 1500);
+                return response.json();
+            })
+            .then(data => {
+                // Armazenar token de autenticação
+                localStorage.setItem('authToken', data.token);
+                
+                // Armazenar dados do usuário
+                localStorage.setItem('userData', JSON.stringify({
+                    id: data.user.id,
+                    email: data.user.email,
+                    name: data.user.name,
+                    role: data.user.role
+                }));
+                
+                // Se "Lembrar senha" estiver marcado, salvar credenciais
+                if (document.getElementById('remember').checked) {
+                    localStorage.setItem('savedEmail', emailInput.value);
+                    localStorage.setItem('savedPassword', passwordInput.value);
+                } else {
+                    localStorage.removeItem('savedPassword');
+                    // Ainda salvamos o email para identificação
+                    localStorage.setItem('savedEmail', emailInput.value);
+                }
+                
+                // Redirecionar para o dashboard
+                window.location.href = '../pages/dashboard.html';
+            })
+            .catch(error => {
+                console.error('Erro de login:', error);
+                showError(error.message || 'Email ou senha incorretos');
+                loginButton.classList.remove('loading');
+            });
         }
     });
 
@@ -93,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = this.querySelector('button');
             button.classList.add('loading');
             
-            // Simular requisição ao servidor
+            // Simulação - no futuro implementar API de recuperação
             setTimeout(() => {
                 showRecoverySuccess();
                 button.classList.remove('loading');

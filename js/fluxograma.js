@@ -619,11 +619,36 @@ function resetFlowData() {
     }
 }
 
+// Obter todos os nós e links do fluxograma
+function getNodesAndLinks() {
+    console.log('Obtendo nós e links do fluxograma');
+    
+    // Retornar uma cópia profunda dos nós e links
+    return {
+        nodes: nodes.map(node => ({
+            id: node.id,
+            type: node.type,
+            texto: node.data.texto || '',
+            position: {
+                x: node.x || 0,
+                y: node.y || 0
+            }
+        })),
+        links: links.map(link => ({
+            source: link.source.id,
+            target: link.target.id,
+            label: link.label || ''
+        }))
+    };
+}
+
 // Expor funções para uso externo
 window.FluxogramaEditor = {
     create: initFluxograma,
     reset: resetFlowData,
     loadFluxo: loadFluxoIntoFlow,
+    loadFlow: loadFluxoIntoFlow, // Alias para manter compatibilidade
+    getNodesAndLinks: getNodesAndLinks,
     init: function() {
         console.log('Inicializando editor de fluxograma via API pública');
         resetFlowData();

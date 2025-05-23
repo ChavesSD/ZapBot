@@ -1,6 +1,13 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+require('dotenv').config();
+
+// Importação da configuração do banco de dados
+const { connectDatabase } = require('./config/database');
+const { initializeDatabase } = require('./config/initDb');
+
+// Inicializar o aplicativo Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -14,11 +21,32 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, './')));
 
+// Conectar ao banco de dados
+(async () => {
+  try {
+    const dbConnected = await connectDatabase();
+    if (dbConnected) {
+      console.log('Conectado ao MongoDB com sucesso');
+      
+      // Inicializar dados do banco (criar usuário admin padrão)
+      await initializeDatabase();
+    } else {
+      console.error('Falha ao conectar ao MongoDB');
+    }
+  } catch (error) {
+    console.error('Erro na inicialização do banco de dados:', error);
+  }
+})();
+
 // Importação das rotas da API
 const whatsappRoutes = require('./api/routes/whatsapp');
+const userRoutes = require('./api/routes/user');
+const flowRoutes = require('./api/routes/flow');
 
 // Usar as rotas
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/flows', flowRoutes);
 
 // Rotas para páginas HTML
 app.get('/', (req, res) => {

@@ -13,6 +13,7 @@ A aplicação está disponível online em:
 - Envio de mensagens de teste
 - Criação de fluxos de conversação automáticos
 - Editor visual de fluxogramas para criar fluxos
+- Banco de dados MongoDB para armazenamento persistente
 
 ## Configuração do Ambiente
 
@@ -20,6 +21,7 @@ A aplicação está disponível online em:
 
 - Node.js versão 18.x
 - NPM ou Yarn
+- MongoDB (local ou remoto)
 - Conta no Heroku (para deploy)
 
 ### Instalação Local
@@ -35,12 +37,28 @@ cd ZapBot
 npm install
 ```
 
-3. Inicie o servidor:
+3. Configure o banco de dados:
+   - Instale o MongoDB localmente ou use um serviço de nuvem como MongoDB Atlas.
+   - Crie um arquivo `.env` na raiz do projeto com base no modelo `config/.env.example`.
+   - Configure a URL de conexão com o MongoDB na variável `MONGODB_URI`.
+
+4. Inicie o servidor:
 ```
 npm start
 ```
 
-4. Acesse a aplicação em `http://localhost:3000`
+5. Acesse a aplicação em `http://localhost:3000`
+
+## Banco de Dados
+
+O ZapBot utiliza MongoDB para armazenamento persistente de dados:
+
+- **Usuários**: Armazena informações de login, perfis e permissões
+- **Fluxos**: Armazena configurações de fluxos de conversação, incluindo nós e conexões
+
+Na primeira inicialização, o sistema criará automaticamente um usuário administrador:
+- Email: `adm@zapbot.com`
+- Senha: `adm123`
 
 ## Conexão com WhatsApp
 
@@ -65,13 +83,16 @@ A aplicação está configurada para deploy no Heroku. Siga estas etapas:
 3. Faça login na sua conta Heroku: `heroku login`
 4. Crie um novo app: `heroku create zapbot-wpp`
 5. Configure o Node.js e Express para funcionar com o Heroku 
-6. Faça deploy da aplicação: `git push heroku master`
+6. Adicione um add-on para MongoDB: `heroku addons:create mongodb`
+7. Configure as variáveis de ambiente: `heroku config:set JWT_SECRET=seu_segredo_jwt`
+8. Faça deploy da aplicação: `git push heroku master`
 
 ## Troubleshooting
 
 - **Erro de conexão com a API**: Verifique se a URL configurada em `js/dashboard.js` está correta
 - **QR Code não aparece**: Verifique se o servidor backend está rodando corretamente
 - **Erro ao escanear QR Code**: Tente gerar um novo QR Code e verifique se o WhatsApp do celular está atualizado
+- **Erro de conexão com MongoDB**: Verifique a URI de conexão e certifique-se de que o serviço está rodando
 
 ## Contribuições
 
@@ -81,23 +102,23 @@ Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar
 
 ```
 whatsapp-bot/
-├── assets/         # Imagens, ícones e outros recursos
+├── api/           # Controllers e rotas da API
+├── assets/        # Imagens, ícones e outros recursos
+├── config/        # Configurações do banco de dados
 ├── css/           # Arquivos de estilo
-│   ├── styles.css
-│   └── dashboard.css
 ├── js/            # Arquivos JavaScript
-│   ├── script.js
-│   └── dashboard.js
+├── middleware/    # Middlewares (autenticação, etc.)
+├── models/        # Modelos de dados Mongoose
 ├── pages/         # Páginas HTML
-│   ├── index.html    # Página de login
-│   └── dashboard.html # Dashboard principal
-├── index.html     # Página de redirecionamento
+├── .env           # Variáveis de ambiente (não versionado)
+├── server.js      # Servidor Express
 └── README.md      # Documentação do projeto
 ```
 
 ## Funcionalidades
 
-- Sistema de login com autenticação
+- Sistema de login com autenticação JWT
+- Armazenamento persistente em MongoDB
 - Opção de "Lembrar senha"
 - Interface responsiva
 - Design moderno inspirado no WhatsApp
@@ -114,16 +135,15 @@ whatsapp-bot/
 ## Como Executar
 
 1. Clone este repositório
-2. Abra o arquivo `index.html` na raiz do projeto em seu navegador
-3. O sistema irá:
-   - Redirecionar para o dashboard se você já estiver logado
-   - Redirecionar para a página de login se não estiver logado
-4. Faça login com as credenciais fornecidas
+2. Configure o arquivo `.env` com a conexão MongoDB
+3. Execute `npm install` para instalar dependências
+4. Execute `npm start` para iniciar o servidor
+5. Acesse `http://localhost:3000` em seu navegador
 
 ## Fluxo de Navegação
 
 1. Usuário acessa `index.html`
-2. Sistema verifica se há credenciais salvas:
+2. Sistema verifica se há token JWT válido:
    - Se houver: redireciona para o dashboard
    - Se não houver: redireciona para a página de login
 3. Após login bem-sucedido: redireciona para o dashboard
@@ -131,8 +151,9 @@ whatsapp-bot/
 
 ## Tecnologias Utilizadas
 
-- HTML5
-- CSS3
-- JavaScript (Vanilla)
-- LocalStorage para persistência de dados
+- HTML5, CSS3, JavaScript (Vanilla)
+- Node.js e Express
+- MongoDB e Mongoose
+- JWT para autenticação
+- LocalStorage para persistência temporária
 - Font Awesome para ícones 

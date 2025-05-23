@@ -1,13 +1,48 @@
 // Verificar autenticação
 function checkAuth() {
-    const savedEmail = localStorage.getItem('savedEmail');
-    const loggedIn = localStorage.getItem('loggedIn');
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('userData');
     
-    if (!savedEmail || !loggedIn) {
+    if (!token || !userData) {
         console.log('Usuário não autenticado. Redirecionando para login...');
         window.location.href = 'index.html';
-    } else {
-        console.log('Usuário autenticado:', savedEmail);
+        return false;
+    }
+    
+    try {
+        // Verificar se o token está expirado (isso é uma verificação básica)
+        // A validação real ocorre no servidor quando as requisições são feitas
+        const parsedUserData = JSON.parse(userData);
+        console.log('Usuário autenticado:', parsedUserData.email);
+        
+        // Fazer uma requisição para verificar se o token é válido
+        fetch('/api/users/me', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Se o token for inválido, fazer logout
+                console.log('Token inválido ou expirado. Redirecionando para login...');
+                doLogout();
+                return false;
+            }
+            return true;
+        })
+        .catch(error => {
+            console.error('Erro ao verificar token:', error);
+            // Se houver erro de conexão, não fazemos logout
+            // para permitir uso offline
+            return true;
+        });
+        
+        return true;
+    } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+        window.location.href = 'index.html';
+        return false;
     }
 }
 
@@ -36,21 +71,54 @@ function initNavigation() {
 function initLogout() {
     const logoutBtn = document.getElementById('logoutBtn');
     logoutBtn.addEventListener('click', () => {
-        localStorage.removeItem('savedEmail');
-        localStorage.removeItem('savedPassword');
-        localStorage.removeItem('loggedIn');
-        console.log('Logout realizado. Redirecionando...');
-        window.location.href = 'index.html';
+        doLogout();
     });
+}
+
+// Função de logout centralizada
+function doLogout() {
+    // Limpar token e dados de autenticação
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    
+    // Opcionalmente manter as credenciais salvas para o próximo login
+    // (email e senha se o usuário marcou "Lembrar senha")
+    
+    console.log('Logout realizado. Redirecionando...');
+    window.location.href = 'index.html';
 }
 
 // Atualizar informações do usuário
 function updateUserInfo() {
     const userEmail = document.getElementById('userEmail');
-    const savedEmail = localStorage.getItem('savedEmail');
-    if (savedEmail) {
-        userEmail.textContent = savedEmail;
+    const userData = localStorage.getItem('userData');
+    
+    if (userData) {
+        try {
+            const parsedUserData = JSON.parse(userData);
+            // Usar o nome do usuário se disponível, caso contrário usar o email
+            userEmail.textContent = parsedUserData.name || parsedUserData.email;
+        } catch (error) {
+            console.error('Erro ao processar dados do usuário:', error);
+            userEmail.textContent = 'Usuário';
+        }
     }
+}
+
+// Função para obter o token de autenticação para requisições
+function getAuthHeaders(contentType = 'application/json') {
+    const token = localStorage.getItem('authToken');
+    const headers = new Headers();
+    
+    if (token) {
+        headers.append('Authorization', `Bearer ${token}`);
+    }
+    
+    if (contentType) {
+        headers.append('Content-Type', contentType);
+    }
+    
+    return headers;
 }
 
 // Configuração da API
@@ -84,7 +152,7 @@ async function updateConnectionStatus() {
         console.log(`Verificando status: ${API_URL}/whatsapp/status-session`);
         const response = await fetch(`${API_URL}/whatsapp/status-session`, {
             method: 'GET',
-            headers: getHeaders()
+            headers: getAuthHeaders()
         });
                 
         if (response.ok) {
@@ -125,17 +193,17 @@ async function updateConnectionStatus() {
 
 // Função para criar headers com autenticação usando o token específico da sessão
 function getHeaders(contentType = 'application/json') {
-    const headers = {};
+    const headers = new Headers();
     
     // Usar o token específico da sessão se disponível, caso contrário usar o padrão
     if (sessionToken) {
-        headers['Authorization'] = `Bearer ${sessionToken}`;
+        headers.append('Authorization', `Bearer ${sessionToken}`);
     } else {
-        headers['Authorization'] = `Bearer ${API_TOKEN}`;
+        headers.append('Authorization', `Bearer ${API_TOKEN}`);
     }
     
     if (contentType) {
-        headers['Content-Type'] = contentType;
+        headers.append('Content-Type', contentType);
     }
     
     return headers;
@@ -183,7 +251,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
         
         const options = {
             method,
-            headers: getHeaders()
+            headers: getAuthHeaders()
         };
         
         if (body && method !== 'GET') {
@@ -213,7 +281,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
                     
                     const retryOptions = {
                         method,
-                        headers: getHeaders()
+                        headers: getAuthHeaders()
                     };
                     
                     if (body && method !== 'GET') {
@@ -347,7 +415,7 @@ async function fetchQRCode() {
         
         const response = await fetch(url, {
             method: 'POST',
-            headers: getHeaders()
+            headers: getAuthHeaders()
         });
         
         if (!response.ok) {
@@ -448,7 +516,7 @@ function initQRCode() {
             const url = `${API_URL}/whatsapp/close-session`;
             const response = await fetch(url, {
                 method: 'POST',
-                headers: getHeaders()
+                headers: getAuthHeaders()
             });
             
             if (response.ok) {
@@ -585,7 +653,7 @@ async function checkToken() {
         try {
             const response = await fetch(`${API_URL}/whatsapp/status-session`, {
                 method: 'GET',
-                headers: getHeaders()
+                headers: getAuthHeaders()
             });
             
             if (response.ok) {
@@ -626,11 +694,11 @@ function initSendMessageButton() {
     const lastMessageNumber = localStorage.getItem('lastMessageNumber');
     const lastMessageText = localStorage.getItem('lastMessageText');
     
-    if (lastMessageNumber && phoneNumberInput) {
+    if (lastMessageNumber && phoneNumberInput instanceof HTMLInputElement) {
         phoneNumberInput.value = lastMessageNumber;
     }
     
-    if (lastMessageText && messageTextarea) {
+    if (lastMessageText && messageTextarea instanceof HTMLTextAreaElement) {
         messageTextarea.value = lastMessageText;
     }
     
@@ -644,14 +712,16 @@ function initSendMessageButton() {
                 return;
             }
             
-            const number = phoneNumberInput.value;
-            const message = messageTextarea.value;
-            
-            const success = await sendMessage(number, message);
-            
-            if (success) {
-                // Limpar formulário após envio bem-sucedido
-                messageTextarea.value = '';
+            if (phoneNumberInput instanceof HTMLInputElement && messageTextarea instanceof HTMLTextAreaElement) {
+                const number = phoneNumberInput.value;
+                const message = messageTextarea.value;
+                
+                const success = await sendMessage(number, message);
+                
+                if (success) {
+                    // Limpar formulário após envio bem-sucedido
+                    messageTextarea.value = '';
+                }
             }
         });
     }
