@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const bcrypt = require('bcrypt');
 
 // Função para criar usuário admin padrão se não existir
 const createDefaultAdmin = async () => {
@@ -9,10 +10,14 @@ const createDefaultAdmin = async () => {
     if (!adminExists) {
       console.log('Criando usuário admin padrão...');
       
+      // Gerar hash da senha
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('adm123', salt);
+      
       // Criar novo usuário admin
       const adminUser = new User({
         email: 'adm@zapbot.com',
-        password: 'adm123',
+        password: hashedPassword,
         name: 'Administrador',
         role: 'admin'
       });
